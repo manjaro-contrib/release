@@ -80,7 +80,7 @@ jobs:
         id: url
         if: failure()
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ github.token }}
           job_name: 'stable x86_64 ${{ matrix.edition }}'
       - uses: s3krit/matrix-message-action@v0.0.3
         if: failure()
