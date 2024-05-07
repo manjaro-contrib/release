@@ -121,8 +121,8 @@ jobs:
           kernel: ${{ needs.prepare-release.outputs.stable }}
           release-tag: ${{ needs.prepare-release.outputs.release_tag }}
           build-mirror: ${{ env.MIRROR}}
-          gpg-secret-key-base64: ${{ secrets.CI_PRIV_KEY }}
-          gpg-passphrase: ${{ secrets.CI_GPG_PASSPHRASE }}
+          gpg-secret-key-base64: ${{ secrets.GPG_KEY_BASE64 }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
   announce:
     runs-on: ubuntu-22.04
     needs: [prepare-release, build-stable]

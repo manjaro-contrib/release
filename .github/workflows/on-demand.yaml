@@ -44,29 +44,35 @@ jobs:
       - id: time
         uses: boredland/get-time-action@dbc808befb89eb33fee64f5f4abce4d2a5fa7cfd # tag=2.0.0
         with:
-          format: 'YYYYMMDDHHmm'
+            format: 'YYYYMMDDHHmm'
       - id: kernel
         uses: boredland/kernel-info@main
+      - id: chosen-kernel
+        run: |
+            if [ "${{ inputs.kernel }}" == "longterm" ]; then
+                echo "kernel=${{ steps.kernel.outputs.longterm-pkg }}"
+            else
+                echo "kernel=${{ steps.kernel.outputs.stable-pkg }}"
+            fi
     outputs:
-      release_tag: ${{ steps.time.outputs.time }}
-      longterm: ${{ steps.kernel.outputs.longterm-pkg }}
-      stable: ${{ steps.kernel.outputs.stable-pkg }}
+        kernel: ${{ steps.chosen-kernel.outputs.kernel }}
+        release_tag: ${{ inputs.edition }}-${{ inputs.branch }}-${{ inputs.kernel }}-${{ steps.time.outputs.time }}
   build-stable:
     runs-on: ubuntu-22.04
     needs: [prepare-release]
     name: stable x86_64 ${{ inputs.edition }} ${{ inputs.branch }} ${{ inputs.kernel }}
     permissions:
-      contents: write
-      actions: read
+        contents: write
+        actions: read
     steps:
       - name: x86_64 build
         uses: manjaro-contrib/action-buildiso@main
         with:
-          edition: ${{ inputs.edition }}
-          branch: ${{ inputs.branch }}
-          scope: full
-          kernel: ${{ needs.prepare-release.outputs.longterm }}
-          release-tag: ${{ needs.prepare-release.outputs.release_tag }}
-          build-mirror: ${{ env.MIRROR }}
-          gpg-secret-key-base64: ${{ secrets.GPG_KEY_BASE64 }}
-          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+            edition: ${{ inputs.edition }}
+            branch: ${{ inputs.branch }}
+            scope: full
+            kernel: ${{ needs.prepare-release.outputs.kernel }}
+            release-tag: ${{ needs.prepare-release.outputs.release_tag }}
+            build-mirror: ${{ env.MIRROR }}
+            gpg-secret-key-base64: ${{ secrets.GPG_KEY_BASE64 }}
+            gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
