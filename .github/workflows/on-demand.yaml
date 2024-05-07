@@ -31,7 +31,7 @@ on:
             - stable
 
 concurrency: 
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ inputs.edition }}-${{ inputs.branch }}-${{ inputs.kernel }}
   cancel-in-progress: true
 
 env:
