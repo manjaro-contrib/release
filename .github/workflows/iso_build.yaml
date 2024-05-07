@@ -74,8 +74,8 @@ jobs:
           kernel: ${{ needs.prepare-release.outputs.longterm }}
           release-tag: ${{ needs.prepare-release.outputs.release_tag }}
           build-mirror: ${{ env.MIRROR }}
-          gpg-secret-key-base64: ${{ secrets.CI_PRIV_KEY }}
-          gpg-passphrase: ${{ secrets.CI_GPG_PASSPHRASE }}
+          gpg-secret-key-base64: ${{ secrets.GPG_KEY_BASE64 }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - uses: Tiryoh/gha-jobid-action@v1.2.0
         id: url
         if: failure()
