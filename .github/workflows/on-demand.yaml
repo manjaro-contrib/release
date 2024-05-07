@@ -50,9 +50,9 @@ jobs:
       - id: chosen-kernel
         run: |
             if [ "${{ inputs.kernel }}" == "longterm" ]; then
-                echo "kernel=${{ steps.kernel.outputs.longterm-pkg }}"
+                echo "kernel=${{ steps.kernel.outputs.longterm-pkg }}" >> "$GITHUB_OUTPUT"
             else
-                echo "kernel=${{ steps.kernel.outputs.stable-pkg }}"
+                echo "kernel=${{ steps.kernel.outputs.stable-pkg }}" >> "$GITHUB_OUTPUT"
             fi
     outputs:
         kernel: ${{ steps.chosen-kernel.outputs.kernel }}
