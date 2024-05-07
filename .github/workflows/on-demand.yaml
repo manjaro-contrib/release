@@ -1,4 +1,4 @@
-name: Build x86_64 ISOs On Demand
+name: On Demand x86 Builds
 on:
   workflow_dispatch:
     inputs:

@@ -1,4 +1,4 @@
-name: Build x86_64 ISOs
+name: Weekly x86 Builds
 on:
   schedule:
     - cron:  '30 2 * * 0'
