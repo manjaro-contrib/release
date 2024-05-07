@@ -1,0 +1,72 @@
+name: Build x86_64 ISOs On Demand
+on:
+  workflow_dispatch:
+    inputs:
+        edition:
+            description: 'Edition'
+            required: true
+            type: choice
+            options:
+            - kde
+            - kde-dev
+            - gnome
+            - gnome-next
+            - xfce
+            - cinnamon
+            - i3
+        branch:
+            description: 'Branch'
+            required: true
+            type: choice
+            options:
+            - stable
+            - testing
+            - unstable
+        kernel:
+            description: 'Kernel'
+            required: true
+            type: choice
+            options:
+            - longterm
+            - stable
+
+concurrency: 
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  MIRROR: https://opencolo.mm.fcix.net/manjaro
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-22.04
+    steps:
+      - id: time
+        uses: boredland/get-time-action@dbc808befb89eb33fee64f5f4abce4d2a5fa7cfd # tag=2.0.0
+        with:
+          format: 'YYYYMMDDHHmm'
+      - id: kernel
+        uses: boredland/kernel-info@main
+    outputs:
+      release_tag: ${{ steps.time.outputs.time }}
+      longterm: ${{ steps.kernel.outputs.longterm-pkg }}
+      stable: ${{ steps.kernel.outputs.stable-pkg }}
+  build-stable:
+    runs-on: ubuntu-22.04
+    needs: [prepare-release]
+    name: stable x86_64 ${{ inputs.edition }} ${{ inputs.branch }} ${{ inputs.kernel }}
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: x86_64 build
+        uses: manjaro-contrib/action-buildiso@main
+        with:
+          edition: ${{ inputs.edition }}
+          branch: ${{ inputs.branch }}
+          scope: full
+          kernel: ${{ needs.prepare-release.outputs.longterm }}
+          release-tag: ${{ needs.prepare-release.outputs.release_tag }}
+          build-mirror: ${{ env.MIRROR }}
+          gpg-secret-key-base64: ${{ secrets.GPG_KEY_BASE64 }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
