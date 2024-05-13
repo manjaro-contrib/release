@@ -28,7 +28,7 @@ jobs:
       - id: kernel
         uses: boredland/kernel-info@main
     outputs:
-      release_tag: ${{ steps.time.outputs.time }}
+      release_tag: rc-${{ steps.time.outputs.time }}
       longterm: ${{ steps.kernel.outputs.longterm-pkg }}
       stable: ${{ steps.kernel.outputs.stable-pkg }}
   build-stable:
