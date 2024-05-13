@@ -1,4 +1,4 @@
-name: Copy release to the mirror
+name: Mirror
 
 on:
   release:
@@ -8,52 +8,102 @@ on:
       release-tag:
         description: 'Release tag'
         required: true
-        default: 'latest'
 
 concurrency: 
-  group: "mirror"
+  group: ${{ github.workflow }}
   cancel-in-progress: true
 
 env:
   download_dir: download
 
 jobs:
-    release:
+    mirror:
         runs-on: ubuntu-latest
         name: Copy release to the mirror
         environment:
             name: stable-mirror
             url: https://release.manjaro.download
+        strategy:
+            matrix:
+                edition: 
+                - kde
+                - xfce
+                - gnome
+                - i3
+                - cinnamon
+                - sway
         steps:
-            - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4
+            - name: checkout
+              uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4
             - name: download & extract release assets
               env:
                 GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                gh release view ${{ inputs.release-tag || github.event.release.tag_name }} --json assets --jq '[[.assets[]][] | select(.name | contains("-unstable-") | not) | select(.name | contains("-testing-") | not)] | sort_by(.name)' >docs/assets.json
+                gh release view ${{ inputs.release-tag || github.event.release.tag_name }} --json assets --jq '[[.assets[]][] | select(.name | contains("-${{ matrix.edition }}-")) | select(.name | contains("-unstable-") | not) | select(.name | contains("-testing-") | not)] | sort_by(.name)' >docs/assets.json
                 
                 mkdir -p $download_dir
                 for url in $(cat docs/assets.json | jq -r '.[].url'); do
                     wget -q -P $download_dir $url
                     echo downloaded $url
-                    if [[ $url == *".iso.zip"* ]]; then
-
-                        # unzip files
-                        for file in $download_dir/*.iso.zip; do 
-                            zip -FF $file --out manjaro-full.zip && unzip manjaro-full.zip -d $download_dir/
-                            echo unzipped $file
-                        done
-                        ## remove unzipped files
-                        rm -f $download_dir/*.zip || echo ok
-                        rm -f $download_dir/*.z01 || echo ok
-                    fi
                 done
                 
+
+                # unzip files
+                for file in $download_dir/*.iso.zip; do 
+                    zip -FF $file --out manjaro-full.zip && unzip manjaro-full.zip -d $download_dir/
+                    echo unzipped $file
+                done
+                ## remove unzipped files
+                rm -f $download_dir/*.zip || echo ok
+                rm -f $download_dir/*.z01 || echo ok
+
                 du -h $download_dir
-                ls $download_dir
-            - name: create release filelist
+                ls $download_dirlatest
+            - name: create edition release file-list
               id: files
               run: |
                 (cd $download_dir && ls -l *iso*) | \
-                    jq --compact-output -s -R 'split("\n") | [.[] | select(length > 0) | split(" ") | [.[] | select(. == "" | not)] | { size: .[4] | tonumber, name: .[-1], url: "https://r2.manjaro.download/\(.[-1])" }]' \
+                    jq --compact-output -s -R 'split("\n") | [.[] | select(length > 0) | split(" ") | [.[] | select(. == "" | not)] | { size: .[4] | tonumber, name: .[-1], url: "https://r2.manjaro.download/latest/\(.[-1])" }]' \
                     > $download_dir/release.json
+
+                echo "list=$(cat $download_dir/release.json)" >> $GITHUB_OUTPUT
+            - name: write matrix outputs
+              uses: cloudposse/github-action-matrix-outputs-write@v1
+              id: out
+              with:
+                  matrix-step-name: ${{ github.job }}
+                  matrix-key: ${{ matrix.edition }}
+                  outputs: |-
+                    files: ${{ steps.files.outputs.list }}
+            - name: s3 upload
+              id: s3
+              run: echo "Uploading to s3 (not implemented)"
+    release:
+        runs-on: ubuntu-latest
+        needs: mirror
+        outputs:
+          result: "${{ steps.read.outputs.result }}"
+        permissions:
+          contents: write
+        steps:
+            - name: checkout
+              uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4
+            - name: receive matrix outputs
+              uses: cloudposse/github-action-matrix-outputs-read@v1
+              id: read
+              with:
+                matrix-step-name: mirror
+            - name: write release info
+              run: |
+                echo '${{ steps.read.outputs.result }}' | jq '.[]' > docs/release.json
+            - name: commit
+              run: |
+                git config user.name repo-add-bot
+                git config user.email info@manjaro.download
+                git add docs/release.json
+
+                if [[ `git status --porcelain` ]]; then
+                  git status --porcelain
+                  git commit -m "update release.json"
+                  git push
+                fi
