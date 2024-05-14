@@ -1,5 +1,3 @@
-*.iso
-manjaro-tools
-pkg-cache
-iso-profiles
-iso
+docs/_site
+docs/.wrangler
+docs/.jekyll-cache

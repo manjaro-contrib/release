@@ -95,12 +95,13 @@ jobs:
                 matrix-step-name: mirror
             - name: write release info
               run: |
-                echo '${{ steps.read.outputs.result }}' | jq '.[]' > docs/release.json
+                echo '${{ steps.read.outputs.result }}' | jq '.[]' > docs/_data/release.json
+                cp docs/_data/release.json docs/release.json
             - name: commit
               run: |
                 git config user.name repo-add-bot
                 git config user.email info@manjaro.download
-                git add docs/release.json
+                git add docs/_data/release.json docs/release.json
 
                 if [[ `git status --porcelain` ]]; then
                   git status --porcelain
