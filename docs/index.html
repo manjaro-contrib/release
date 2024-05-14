@@ -3,10 +3,15 @@ layout: default
 description: "Download the latest releases of the project."
 ---
 
-{% for asset in site.data.release %}
-<div class="link">
-  <a href="{{ asset.url }}" alt="{{ asset.name }}"
-    >{{ asset.name }} <i>{{ asset.size | filesize }}</i></a
-  >
-</div>
+<a alt="release.json" href="{{ site.url }}/release.json">status</a>
+{% for _edition in site.data.release %}
+  {% assign edition = _edition[0] %}
+    <div class="link">
+      <pre>
+        edition: {{ edition }}
+        {% for asset in site.data.release[edition] %}
+        <a href="{{ asset.url }}" alt="{{ asset.name }}">{{ asset.name }} <i>{{ asset.size }}</i></a>
+        {% endfor %}
+      </pre>
+    </div>
 {% endfor %}
