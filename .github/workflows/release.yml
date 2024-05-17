@@ -15,7 +15,7 @@ concurrency:
 
 env:
   download_dir: download
-  public_url: https://files.manjaro.download/
+  public_url: https://files.manjaro.download
 
 jobs:
     mirror:
