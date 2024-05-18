@@ -108,7 +108,7 @@ jobs:
                 matrix-step-name: mirror
             - name: write release info
               run: |
-                echo '${{ steps.read.outputs.result }}' | jq '.[]' > docs/_data/release.json
+                echo '${{ steps.read.outputs.result }}' | jq --sort-keys '.[]' > docs/_data/release.json
                 cp docs/_data/release.json docs/release.json
             - name: commit
               run: |
