@@ -1,3 +1,15 @@
 title: Manjaro Release
 email: info@manjaro.download
 url: "https://manjaro.download"
+github: https://github.com/manjaro-contrib/release
+
+remote_theme: manjaro-sway/manjaro-sway
+
+plugins:
+  - jekyll-get-json
+  - jekyll-webp
+  - jekyll-remote-theme
+
+webp:
+  enabled: true
+  formats: [".jpeg", ".jpg", ".png", ".tiff"]
