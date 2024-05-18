@@ -68,9 +68,9 @@ jobs:
               run: |
                 (cd $download_dir && ls -l *iso*) | \
                     jq --compact-output -s -R 'split("\n") | [.[] | select(length > 0) | split(" ") | [.[] | select(. == "" | not)] | { size: .[4] | tonumber, name: .[-1], url: "${{ env.public_url }}/${{ env.release_tag }}/\(.[-1])" }]' \
-                    > $download_dir/release.json
+                    > /tmp/release.json
 
-                echo "list=$(cat $download_dir/release.json)" >> $GITHUB_OUTPUT
+                echo "list=$(cat /tmp/release.json)" >> $GITHUB_OUTPUT
             - name: write matrix outputs
               uses: cloudposse/github-action-matrix-outputs-write@v1
               id: out
