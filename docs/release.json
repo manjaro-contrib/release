@@ -1,194 +1,194 @@
 {
   "cinnamon": [
     {
-      "name": "manjaro-cinnamon-24.0.0-240517-linux66.iso",
-      "size": 2936786944,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-cinnamon-24.0.0-240517-linux66.iso"
+      "name": "manjaro-cinnamon-25.0.0-250527-linux612.iso",
+      "size": 3684306944,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-cinnamon-25.0.0-250527-linux612.iso"
     },
     {
-      "name": "manjaro-cinnamon-24.0.0-240517-linux66.iso.pkgs",
-      "size": 20996,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-cinnamon-24.0.0-240517-linux66.iso.pkgs"
+      "name": "manjaro-cinnamon-25.0.0-250527-linux612.iso.pkgs",
+      "size": 21733,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-cinnamon-25.0.0-250527-linux612.iso.pkgs"
     },
     {
-      "name": "manjaro-cinnamon-24.0.0-240517-linux66.iso.sha1",
-      "size": 85,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-cinnamon-24.0.0-240517-linux66.iso.sha1"
+      "name": "manjaro-cinnamon-25.0.0-250527-linux612.iso.sha1",
+      "size": 86,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-cinnamon-25.0.0-250527-linux612.iso.sha1"
     },
     {
-      "name": "manjaro-cinnamon-24.0.0-240517-linux66.iso.sha256",
-      "size": 109,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-cinnamon-24.0.0-240517-linux66.iso.sha256"
+      "name": "manjaro-cinnamon-25.0.0-250527-linux612.iso.sha256",
+      "size": 110,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-cinnamon-25.0.0-250527-linux612.iso.sha256"
     },
     {
-      "name": "manjaro-cinnamon-24.0.0-240517-linux66.iso.sha512",
-      "size": 173,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-cinnamon-24.0.0-240517-linux66.iso.sha512"
+      "name": "manjaro-cinnamon-25.0.0-250527-linux612.iso.sha512",
+      "size": 174,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-cinnamon-25.0.0-250527-linux612.iso.sha512"
     },
     {
-      "name": "manjaro-cinnamon-24.0.0-240517-linux66.iso.sig",
+      "name": "manjaro-cinnamon-25.0.0-250527-linux612.iso.sig",
       "size": 119,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-cinnamon-24.0.0-240517-linux66.iso.sig"
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-cinnamon-25.0.0-250527-linux612.iso.sig"
     }
   ],
   "gnome": [
     {
-      "name": "manjaro-gnome-24.0.0-240517-linux66.iso",
-      "size": 3566100480,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-gnome-24.0.0-240517-linux66.iso"
+      "name": "manjaro-gnome-25.0.0-250527-linux612.iso",
+      "size": 3918102528,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-gnome-25.0.0-250527-linux612.iso"
     },
     {
-      "name": "manjaro-gnome-24.0.0-240517-linux66.iso.pkgs",
-      "size": 22536,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-gnome-24.0.0-240517-linux66.iso.pkgs"
+      "name": "manjaro-gnome-25.0.0-250527-linux612.iso.pkgs",
+      "size": 22455,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-gnome-25.0.0-250527-linux612.iso.pkgs"
     },
     {
-      "name": "manjaro-gnome-24.0.0-240517-linux66.iso.sha1",
-      "size": 82,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-gnome-24.0.0-240517-linux66.iso.sha1"
+      "name": "manjaro-gnome-25.0.0-250527-linux612.iso.sha1",
+      "size": 83,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-gnome-25.0.0-250527-linux612.iso.sha1"
     },
     {
-      "name": "manjaro-gnome-24.0.0-240517-linux66.iso.sha256",
-      "size": 106,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-gnome-24.0.0-240517-linux66.iso.sha256"
+      "name": "manjaro-gnome-25.0.0-250527-linux612.iso.sha256",
+      "size": 107,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-gnome-25.0.0-250527-linux612.iso.sha256"
     },
     {
-      "name": "manjaro-gnome-24.0.0-240517-linux66.iso.sha512",
-      "size": 170,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-gnome-24.0.0-240517-linux66.iso.sha512"
+      "name": "manjaro-gnome-25.0.0-250527-linux612.iso.sha512",
+      "size": 171,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-gnome-25.0.0-250527-linux612.iso.sha512"
     },
     {
-      "name": "manjaro-gnome-24.0.0-240517-linux66.iso.sig",
+      "name": "manjaro-gnome-25.0.0-250527-linux612.iso.sig",
       "size": 119,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-gnome-24.0.0-240517-linux66.iso.sig"
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-gnome-25.0.0-250527-linux612.iso.sig"
     }
   ],
   "i3": [
     {
-      "name": "manjaro-i3-24.0.0-240517-linux66.iso",
-      "size": 3153317888,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-i3-24.0.0-240517-linux66.iso"
+      "name": "manjaro-i3-25.0.0-250527-linux612.iso",
+      "size": 3632384000,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-i3-25.0.0-250527-linux612.iso"
     },
     {
-      "name": "manjaro-i3-24.0.0-240517-linux66.iso.pkgs",
-      "size": 20562,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-i3-24.0.0-240517-linux66.iso.pkgs"
+      "name": "manjaro-i3-25.0.0-250527-linux612.iso.pkgs",
+      "size": 20782,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-i3-25.0.0-250527-linux612.iso.pkgs"
     },
     {
-      "name": "manjaro-i3-24.0.0-240517-linux66.iso.sha1",
-      "size": 79,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-i3-24.0.0-240517-linux66.iso.sha1"
+      "name": "manjaro-i3-25.0.0-250527-linux612.iso.sha1",
+      "size": 80,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-i3-25.0.0-250527-linux612.iso.sha1"
     },
     {
-      "name": "manjaro-i3-24.0.0-240517-linux66.iso.sha256",
-      "size": 103,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-i3-24.0.0-240517-linux66.iso.sha256"
+      "name": "manjaro-i3-25.0.0-250527-linux612.iso.sha256",
+      "size": 104,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-i3-25.0.0-250527-linux612.iso.sha256"
     },
     {
-      "name": "manjaro-i3-24.0.0-240517-linux66.iso.sha512",
-      "size": 167,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-i3-24.0.0-240517-linux66.iso.sha512"
+      "name": "manjaro-i3-25.0.0-250527-linux612.iso.sha512",
+      "size": 168,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-i3-25.0.0-250527-linux612.iso.sha512"
     },
     {
-      "name": "manjaro-i3-24.0.0-240517-linux66.iso.sig",
+      "name": "manjaro-i3-25.0.0-250527-linux612.iso.sig",
       "size": 119,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-i3-24.0.0-240517-linux66.iso.sig"
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-i3-25.0.0-250527-linux612.iso.sig"
     }
   ],
   "kde": [
     {
-      "name": "manjaro-kde-24.0.0-240517-linux66.iso",
-      "size": 3404638208,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-kde-24.0.0-240517-linux66.iso"
+      "name": "manjaro-kde-25.0.0-250527-linux612.iso",
+      "size": 4108124160,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-kde-25.0.0-250527-linux612.iso"
     },
     {
-      "name": "manjaro-kde-24.0.0-240517-linux66.iso.pkgs",
-      "size": 23207,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-kde-24.0.0-240517-linux66.iso.pkgs"
+      "name": "manjaro-kde-25.0.0-250527-linux612.iso.pkgs",
+      "size": 23900,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-kde-25.0.0-250527-linux612.iso.pkgs"
     },
     {
-      "name": "manjaro-kde-24.0.0-240517-linux66.iso.sha1",
-      "size": 80,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-kde-24.0.0-240517-linux66.iso.sha1"
+      "name": "manjaro-kde-25.0.0-250527-linux612.iso.sha1",
+      "size": 81,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-kde-25.0.0-250527-linux612.iso.sha1"
     },
     {
-      "name": "manjaro-kde-24.0.0-240517-linux66.iso.sha256",
-      "size": 104,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-kde-24.0.0-240517-linux66.iso.sha256"
+      "name": "manjaro-kde-25.0.0-250527-linux612.iso.sha256",
+      "size": 105,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-kde-25.0.0-250527-linux612.iso.sha256"
     },
     {
-      "name": "manjaro-kde-24.0.0-240517-linux66.iso.sha512",
-      "size": 168,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-kde-24.0.0-240517-linux66.iso.sha512"
+      "name": "manjaro-kde-25.0.0-250527-linux612.iso.sha512",
+      "size": 169,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-kde-25.0.0-250527-linux612.iso.sha512"
     },
     {
-      "name": "manjaro-kde-24.0.0-240517-linux66.iso.sig",
+      "name": "manjaro-kde-25.0.0-250527-linux612.iso.sig",
       "size": 119,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-kde-24.0.0-240517-linux66.iso.sig"
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-kde-25.0.0-250527-linux612.iso.sig"
     }
   ],
   "sway": [
     {
-      "name": "manjaro-sway-24.0.0-240517-linux66.iso",
-      "size": 2624430080,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-sway-24.0.0-240517-linux66.iso"
+      "name": "manjaro-sway-25.0.0-250527-linux612.iso",
+      "size": 2968909824,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-sway-25.0.0-250527-linux612.iso"
     },
     {
-      "name": "manjaro-sway-24.0.0-240517-linux66.iso.pkgs",
-      "size": 14828,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-sway-24.0.0-240517-linux66.iso.pkgs"
+      "name": "manjaro-sway-25.0.0-250527-linux612.iso.pkgs",
+      "size": 14884,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-sway-25.0.0-250527-linux612.iso.pkgs"
     },
     {
-      "name": "manjaro-sway-24.0.0-240517-linux66.iso.sha1",
-      "size": 81,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-sway-24.0.0-240517-linux66.iso.sha1"
+      "name": "manjaro-sway-25.0.0-250527-linux612.iso.sha1",
+      "size": 82,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-sway-25.0.0-250527-linux612.iso.sha1"
     },
     {
-      "name": "manjaro-sway-24.0.0-240517-linux66.iso.sha256",
-      "size": 105,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-sway-24.0.0-240517-linux66.iso.sha256"
+      "name": "manjaro-sway-25.0.0-250527-linux612.iso.sha256",
+      "size": 106,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-sway-25.0.0-250527-linux612.iso.sha256"
     },
     {
-      "name": "manjaro-sway-24.0.0-240517-linux66.iso.sha512",
-      "size": 169,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-sway-24.0.0-240517-linux66.iso.sha512"
+      "name": "manjaro-sway-25.0.0-250527-linux612.iso.sha512",
+      "size": 170,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-sway-25.0.0-250527-linux612.iso.sha512"
     },
     {
-      "name": "manjaro-sway-24.0.0-240517-linux66.iso.sig",
+      "name": "manjaro-sway-25.0.0-250527-linux612.iso.sig",
       "size": 119,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-sway-24.0.0-240517-linux66.iso.sig"
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-sway-25.0.0-250527-linux612.iso.sig"
     }
   ],
   "xfce": [
     {
-      "name": "manjaro-xfce-24.0.0-240517-linux66.iso",
-      "size": 3213541376,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-xfce-24.0.0-240517-linux66.iso"
+      "name": "manjaro-xfce-25.0.0-250527-linux612.iso",
+      "size": 3630112768,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-xfce-25.0.0-250527-linux612.iso"
     },
     {
-      "name": "manjaro-xfce-24.0.0-240517-linux66.iso.pkgs",
-      "size": 20368,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-xfce-24.0.0-240517-linux66.iso.pkgs"
+      "name": "manjaro-xfce-25.0.0-250527-linux612.iso.pkgs",
+      "size": 20906,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-xfce-25.0.0-250527-linux612.iso.pkgs"
     },
     {
-      "name": "manjaro-xfce-24.0.0-240517-linux66.iso.sha1",
-      "size": 81,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-xfce-24.0.0-240517-linux66.iso.sha1"
+      "name": "manjaro-xfce-25.0.0-250527-linux612.iso.sha1",
+      "size": 82,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-xfce-25.0.0-250527-linux612.iso.sha1"
     },
     {
-      "name": "manjaro-xfce-24.0.0-240517-linux66.iso.sha256",
-      "size": 105,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-xfce-24.0.0-240517-linux66.iso.sha256"
+      "name": "manjaro-xfce-25.0.0-250527-linux612.iso.sha256",
+      "size": 106,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-xfce-25.0.0-250527-linux612.iso.sha256"
     },
     {
-      "name": "manjaro-xfce-24.0.0-240517-linux66.iso.sha512",
-      "size": 169,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-xfce-24.0.0-240517-linux66.iso.sha512"
+      "name": "manjaro-xfce-25.0.0-250527-linux612.iso.sha512",
+      "size": 170,
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-xfce-25.0.0-250527-linux612.iso.sha512"
     },
     {
-      "name": "manjaro-xfce-24.0.0-240517-linux66.iso.sig",
+      "name": "manjaro-xfce-25.0.0-250527-linux612.iso.sig",
       "size": 119,
-      "url": "https://files.manjaro.download/rc-202405172048/manjaro-xfce-24.0.0-240517-linux66.iso.sig"
+      "url": "https://files.manjaro.download/rc-202505270721/manjaro-xfce-25.0.0-250527-linux612.iso.sig"
     }
   ]
 }
