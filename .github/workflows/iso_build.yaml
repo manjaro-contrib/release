@@ -33,17 +33,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: [prepare-release]
-    name: unstable x86_64 sway
+    name: unstable x86_64 ${{ matrix.edition }}
     permissions:
       contents: write
     outputs:
       release_tag: ${{ needs.prepare-release.outputs.release_tag }}
+    strategy:
+      # one edition failing must not withhold the others
+      fail-fast: false
+      matrix:
+        # the editions manjaro.org offers for download
+        edition: [kde, xfce, gnome, cinnamon, i3, sway]
+        include:
+          - repo: https://gitlab.manjaro.org/profiles-and-settings/iso-profiles.git
+          - edition: sway
+            repo: https://github.com/manjaro-sway/iso-profiles
     steps:
       - name: x86_64 build
         uses: manjaro-contrib/action-buildiso@377cedc76ac456dca7549920eff95ddcaf45c4dc # main
         with:
-          iso-profiles-repo: https://github.com/manjaro-sway/iso-profiles
-          edition: sway
+          iso-profiles-repo: ${{ matrix.repo }}
+          edition: ${{ matrix.edition }}
           branch: unstable
           scope: full
           kernel: ${{ needs.prepare-release.outputs.stable }}
@@ -53,6 +63,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: [prepare-release, build]
+    # needs.build.result is 'failure' if any edition failed; publish the
+    # ones that succeeded rather than withholding all of them
+    if: always() && needs.build.result != 'cancelled' && needs.build.result != 'skipped'
     name: publish to the release bucket
     # deleting pruned releases and their tags needs write access
     permissions:
@@ -91,5 +104,5 @@ jobs:
         with:
           room_id: ${{ env.MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
-          message: "😬 Error building sway for **x86** (unstable): Please have a look into the [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          message: "😬 Error building for **x86** (unstable): Please have a look into the [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           server: "matrix.org"

@@ -6,7 +6,9 @@ Building preview ISOs for Manjaro Linux.
 
 ## Description
 
-We build unstable ISOs (against the manjaro unstable repository) with the ![stable](https://img.shields.io/badge/dynamic/json?label=stable&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dstable) kernel, for the sway edition.
+We build unstable ISOs (against the manjaro unstable repository) with the ![stable](https://img.shields.io/badge/dynamic/json?label=stable&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dstable) kernel, for every edition manjaro.org offers for download: `kde`, `xfce`, `gnome`, `cinnamon`, `i3` and `sway`.
+
+Editions build independently, so one failing does not withhold the others.
 
 Each build is attached to a GitHub release for review, and mirrored to the
 `releases` R2 bucket, which a worker in `worker/` serves: it lists the
@@ -35,10 +37,12 @@ For the edition this repository builds nightly:
 | <https://manjaro.download/sway-unstable.iso.sha256> | its checksum |
 | <https://manjaro.download/sway-unstable.iso.pkgs> | the package list |
 
+The same holds for `kde`, `xfce`, `gnome`, `cinnamon` and `i3`.
+
 `<branch>` is one of `unstable`, `testing` or `stable`, and `<edition>` one
 of `sway`, `kde`, `kde-dev`, `gnome`, `gnome-next`, `xfce`, `cinnamon` or
 `i3` — though only combinations that have actually been built resolve;
-anything else answers `404`. Only sway is built here.
+anything else answers `404`.
 
 Any suffix the build produces works, and every one of these is a redirect,
 so `curl` needs `-L`:
