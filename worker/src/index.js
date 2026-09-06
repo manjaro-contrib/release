@@ -65,6 +65,7 @@ h2 { font-size: .95rem; font-weight: 600; margin: 1.6rem 0 .3rem; opacity: .75; 
 .row:hover { text-decoration: underline; }
 i { opacity: .6; font-style: normal; }
 p { opacity: .7; }
+footer { margin-top: 2rem; opacity: .7; }
 `;
 
 function page(heading, bodyHtml) {
@@ -79,6 +80,7 @@ function page(heading, bodyHtml) {
 <body>
 <h1>${escapeHtml(heading)}</h1>
 ${bodyHtml}
+<footer>packages are at <a href="https://packages.manjaro.download">packages.manjaro.download</a></footer>
 </body>
 </html>
 `;
