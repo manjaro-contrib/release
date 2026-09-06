@@ -49,8 +49,7 @@ jobs:
           kernel: ${{ needs.prepare-release.outputs.stable }}
           release-tag: ${{ needs.prepare-release.outputs.release_tag }}
           build-mirror: ${{ env.MIRROR }}
-          gpg-secret-key-base64: ${{ secrets.GPG_KEY_BASE64 }}
-          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          gpg-secret-key-base64: ${{ secrets.GPG_SECRET_BASE64 }}
   publish:
     runs-on: ubuntu-latest
     needs: [prepare-release, build]
