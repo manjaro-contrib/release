@@ -6,23 +6,13 @@ Building preview ISOs for Manjaro Linux.
 
 ## Description
 
-We build stable ISOs (against the manjaro stable repository) with the ![longterm](https://img.shields.io/badge/dynamic/json?label=longterm&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dlongterm) kernel. These profiles are being built:
+We build unstable ISOs (against the manjaro unstable repository) with the ![stable](https://img.shields.io/badge/dynamic/json?label=stable&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dstable) kernel, for the sway edition.
 
-- kde
-- xfce
-- gnome
-- i3
-- cinnamon
-- sway
+Each build is attached to a GitHub release for review, and mirrored to the
+`releases` R2 bucket, which is the download surface.
 
-In addition, unstable ISOs (against the manjaro unstable repository) are built with the ![stable](https://img.shields.io/badge/dynamic/json?label=stable&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dstable) kernel. These profiles are built:
-
-- kde-dev
-- xfce
-- gnome-next
-- i3
-- cinnamon
-- sway
+Other editions can still be built one-off through the `On Demand x86 Builds`
+workflow.
 
 ## Where can I download an iso?
 

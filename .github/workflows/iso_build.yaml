@@ -9,7 +9,7 @@ on:
     paths:
       - .github/workflows/iso_build.yaml
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
 
@@ -29,129 +29,66 @@ jobs:
         uses: boredland/kernel-info@main
     outputs:
       release_tag: rc-${{ steps.time.outputs.time }}
-      longterm: ${{ steps.kernel.outputs.longterm-pkg }}
       stable: ${{ steps.kernel.outputs.stable-pkg }}
-  build-stable:
+  build:
     runs-on: ubuntu-latest
     needs: [prepare-release]
-    name: stable x86_64 ${{ matrix.edition }}
+    name: unstable x86_64 sway
     permissions:
       contents: write
-      actions: read
-    strategy:
-      fail-fast: false
-      matrix:
-        edition: 
-          - kde
-          - xfce
-          - gnome
-          - i3
-          - cinnamon
-          - sway
-        include:
-          - repo: https://gitlab.manjaro.org/profiles-and-settings/iso-profiles.git
-          - edition: kde
-            mention: "@lordtermor:matrix.org"
-          - edition: xfce
-            mention: "@daphilly:matrix.org"
-          - edition: gnome
-            mention: "@yochananmarqos:matrix.org"
-          - edition: i3
-            mention: "@oberon-manjaro:matrix.org"
-          - edition: cinnamon
-            mention: "@oberon-manjaro:matrix.org"
-          - edition: sway
-            mention: "@boredland:matrix.org"
-            repo: https://github.com/manjaro-sway/iso-profiles
+    outputs:
+      release_tag: ${{ needs.prepare-release.outputs.release_tag }}
     steps:
       - name: x86_64 build
         uses: manjaro-contrib/action-buildiso@main
         with:
-          iso-profiles-repo: ${{ matrix.repo }}
-          edition: ${{ matrix.edition }}
-          branch: stable
+          iso-profiles-repo: https://github.com/manjaro-sway/iso-profiles
+          edition: sway
+          branch: unstable
           scope: full
-          kernel: ${{ needs.prepare-release.outputs.longterm }}
+          kernel: ${{ needs.prepare-release.outputs.stable }}
           release-tag: ${{ needs.prepare-release.outputs.release_tag }}
           build-mirror: ${{ env.MIRROR }}
           gpg-secret-key-base64: ${{ secrets.GPG_KEY_BASE64 }}
           gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
-      - uses: Tiryoh/gha-jobid-action@v1.2.0
-        id: url
-        if: failure()
-        with:
-          github_token: ${{ github.token }}
-          job_name: 'stable x86_64 ${{ matrix.edition }}'
-      - uses: s3krit/matrix-message-action@v0.0.3
-        if: failure()
-        with:
-          room_id: ${{ env.MATRIX_ROOM_ID}}
-          access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
-          message: "🚨 Error building **${{ matrix.edition }}** for **x86** (**stable**). Summon ${{ matrix.mention }} to check the [logs](${{ steps.url.outputs.html_url }}) 🪄"
-          server: "matrix.org"
-  build-next:
+  publish:
     runs-on: ubuntu-latest
-    needs: [prepare-release]
-    name: ${{ matrix.branch }} x86_64 ${{ matrix.edition }}
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        branch: [unstable]
-        edition:
-          - kde-dev
-          - xfce
-          - gnome-next
-          - i3
-          - cinnamon
-          - sway
-        include:
-          - repo: https://gitlab.manjaro.org/profiles-and-settings/iso-profiles.git
-          - edition: sway
-            repo: https://github.com/manjaro-sway/iso-profiles
+    needs: [prepare-release, build]
+    name: publish to the release bucket
     steps:
-      - name: x86_64 build
-        uses: manjaro-contrib/action-buildiso@main
-        with:
-          iso-profiles-repo: ${{ matrix.repo }}
-          edition: ${{ matrix.edition }}
-          branch: ${{ matrix.branch }}
-          scope: full
-          kernel: ${{ needs.prepare-release.outputs.stable }}
-          release-tag: ${{ needs.prepare-release.outputs.release_tag }}
-          build-mirror: ${{ env.MIRROR}}
-          gpg-secret-key-base64: ${{ secrets.GPG_KEY_BASE64 }}
-          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
-  announce:
-    runs-on: ubuntu-latest
-    needs: [prepare-release, build-stable]
-    if: needs.build-stable.result == 'success'
-    steps:
-      - uses: s3krit/matrix-message-action@v0.0.3
-        with:
-          room_id: ${{ env.MATRIX_ROOM_ID}}
-          access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
-          message: "🚀 Success building for **x86** (stable): Should we do a release? Check out [those](https://github.com/${{ github.repository }}/releases/tag/${{ needs.prepare-release.outputs.release_tag }}) assets!"
-          server: "matrix.org"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: install tooling
+        run: pip install boto3
+      - name: publish the iso
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python3 scripts/publish_iso.py --release "$RELEASE_TAG"
   rollback:
     runs-on: ubuntu-latest
-    needs: [prepare-release, build-stable, build-next]
+    needs: [prepare-release, build]
     if: cancelled() || failure()
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: rollback
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo ${{ github.token }} | gh auth login --with-token
           ASSET_COUNT=$(gh release view ${{ needs.prepare-release.outputs.release_tag }} --json "assets" --jq '.assets | length')
-          # If we have more than the two tarballs github creates, we can delete the release - there is nothing to inspect
-          if [ "$ASSET_COUNT" -gt "2" ]; then exit 0;fi
+          # more than the two tarballs github creates means there is something
+          # to inspect, so keep the release
+          if [ "$ASSET_COUNT" -gt "2" ]; then exit 0; fi
           gh release delete ${{ needs.prepare-release.outputs.release_tag }} -y --repo ${{ github.repository }}
           git push --delete origin ${{ needs.prepare-release.outputs.release_tag }}
       - uses: s3krit/matrix-message-action@v0.0.3
-        if: ${{ needs.build-stable.result == 'failure' }}
         with:
-          room_id: ${{ env.MATRIX_ROOM_ID}}
+          room_id: ${{ env.MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
-          message: "😬 Error building for **x86**: Please have a look into the [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          message: "😬 Error building sway for **x86** (unstable): Please have a look into the [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           server: "matrix.org"
