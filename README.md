@@ -40,6 +40,11 @@ build, so it can be linked once instead of being updated per release:
 
     https://manjaro.download/<edition>-<branch>.iso
 
+The signature, checksums and package list have the same permanent URLs, so
+a script can fetch an image and verify it without first resolving which
+release is current - a checksum that named a superseded build would be
+worse than none.
+
 For the edition this repository builds nightly:
 
 | URL | |
