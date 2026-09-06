@@ -6,9 +6,15 @@ Building preview ISOs for Manjaro Linux.
 
 ## Description
 
-We build unstable ISOs (against the manjaro unstable repository) with the ![stable](https://img.shields.io/badge/dynamic/json?label=stable&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dstable) kernel, for every edition manjaro.org offers for download: `kde`, `xfce`, `gnome`, `cinnamon`, `i3` and `sway`.
+We build every edition manjaro.org offers for download - `kde`, `xfce`,
+`gnome`, `cinnamon`, `i3` and `sway` - against all three Manjaro branches,
+so 18 images per run.
 
-Editions build independently, so one failing does not withhold the others.
+Stable images ship the ![longterm](https://img.shields.io/badge/dynamic/json?label=longterm&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dlongterm) kernel; testing and unstable ship the ![stable](https://img.shields.io/badge/dynamic/json?label=stable&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dstable) one.
+
+Each combination builds independently, so one failing withholds none of
+the others, and at most six run at a time so a single run does not occupy
+every available runner.
 
 Each build is attached to a GitHub release for review, and mirrored to the
 `releases` R2 bucket, which a worker in `worker/` serves: it lists the

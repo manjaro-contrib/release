@@ -30,20 +30,25 @@ jobs:
     outputs:
       release_tag: rc-${{ steps.time.outputs.time }}
       stable: ${{ steps.kernel.outputs.stable-pkg }}
+      longterm: ${{ steps.kernel.outputs.longterm-pkg }}
   build:
     runs-on: ubuntu-latest
     needs: [prepare-release]
-    name: unstable x86_64 ${{ matrix.edition }}
+    name: ${{ matrix.branch }} x86_64 ${{ matrix.edition }}
     permissions:
       contents: write
     outputs:
       release_tag: ${{ needs.prepare-release.outputs.release_tag }}
     strategy:
-      # one edition failing must not withhold the others
+      # one combination failing must not withhold the others
       fail-fast: false
+      # 18 combinations, each a full iso build; cap the concurrency so a
+      # run does not occupy every available runner for hours
+      max-parallel: 6
       matrix:
         # the editions manjaro.org offers for download
         edition: [kde, xfce, gnome, cinnamon, i3, sway]
+        branch: [stable, testing, unstable]
         include:
           - repo: https://gitlab.manjaro.org/profiles-and-settings/iso-profiles.git
           - edition: sway
@@ -54,9 +59,10 @@ jobs:
         with:
           iso-profiles-repo: ${{ matrix.repo }}
           edition: ${{ matrix.edition }}
-          branch: unstable
+          branch: ${{ matrix.branch }}
           scope: full
-          kernel: ${{ needs.prepare-release.outputs.stable }}
+          # stable ships the longterm kernel, the moving branches the stable one
+          kernel: ${{ matrix.branch == 'stable' && needs.prepare-release.outputs.longterm || needs.prepare-release.outputs.stable }}
           release-tag: ${{ needs.prepare-release.outputs.release_tag }}
           build-mirror: ${{ env.MIRROR }}
           gpg-secret-key-base64: ${{ secrets.GPG_SECRET_BASE64 }}
@@ -107,5 +113,5 @@ jobs:
         with:
           room_id: ${{ env.MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
-          message: "😬 Error building for **x86** (unstable): Please have a look into the [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          message: "😬 Error building for **x86**: Please have a look into the [logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           server: "matrix.org"
