@@ -63,9 +63,14 @@ information as JSON, keyed by release tag.
 ### Retention
 
 The newest ten releases are kept; older ones are deleted from both GitHub
-and the bucket after each successful publish, so the two cannot disagree
-about what exists. The stable links always resolve, since they point at the
-newest release, which is never pruned.
+and the bucket, so the two cannot disagree about what exists.
+
+Pruning only runs once the new release has uploaded completely. Until then
+the older images are the only ones anyone can download, so a failed or
+partial upload leaves them untouched: each object is checked for the right
+size after upload, a truncated one is removed rather than left to satisfy
+that check later, and any failure stops the run before pruning. The stable
+links keep resolving to the last complete release throughout.
 
 ### Polling for changes
 

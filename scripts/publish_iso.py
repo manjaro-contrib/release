@@ -82,6 +82,7 @@ def main() -> int:
         log(f"{args.release} has no ISO assets")
         return 1
 
+    failed = []
     for asset in assets:
         key = f"{args.prefix}{args.release}/{asset['name']}"
         if already_there(s3, bucket, key, asset["size"]):
@@ -90,13 +91,35 @@ def main() -> int:
         log(f"{asset['name']}: {asset['size'] / 1e9:.2f} GB -> {key}")
         if args.dry_run:
             continue
-        # stream straight through: the runner disk cannot hold the set
-        with urllib.request.urlopen(asset["url"]) as body:
-            s3.upload_fileobj(body, bucket, key, Config=TRANSFER)
+        try:
+            # stream straight through: the runner disk cannot hold the set
+            with urllib.request.urlopen(asset["url"]) as body:
+                s3.upload_fileobj(body, bucket, key, Config=TRANSFER)
+        except (OSError, ClientError) as e:
+            # a half-written object would satisfy a later size check, so
+            # remove it rather than leave a truncated iso in place
+            log(f"{asset['name']}: upload failed: {e}")
+            s3.delete_object(Bucket=bucket, Key=key)
+            failed.append(asset["name"])
+            continue
+        if not already_there(s3, bucket, key, asset["size"]):
+            log(f"{asset['name']}: uploaded size does not match, removing")
+            s3.delete_object(Bucket=bucket, Key=key)
+            failed.append(asset["name"])
+            continue
         log(f"{asset['name']}: published")
 
-    if not args.dry_run:
-        write_state(s3, bucket, log)
+    if args.dry_run:
+        log(f"{args.release}: {len(assets)} asset(s) would be published")
+        return 0
+
+    write_state(s3, bucket, log)
+
+    if failed:
+        # exit non-zero so the pruning step does not run: the old images
+        # are the only working ones until this release uploads cleanly
+        log(f"{args.release}: {len(failed)} of {len(assets)} asset(s) failed")
+        return 1
 
     log(f"{args.release}: {len(assets)} asset(s) in {bucket}")
     return 0

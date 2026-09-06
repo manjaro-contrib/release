@@ -75,6 +75,7 @@ jobs:
       - name: install tooling
         run: pip install boto3
       - name: publish the iso
+        id: publish
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
@@ -84,8 +85,10 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python3 scripts/publish_iso.py --release "$RELEASE_TAG"
       - name: prune old releases
-        # every nightly build is several gigabytes; without this they
-        # accumulate indefinitely, as 746 releases and 29 TB showed
+        # only once this release is fully uploaded: until then the older
+        # images are the only ones users can actually download. Steps stop
+        # on failure anyway; the condition says so rather than implying it.
+        if: steps.publish.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
