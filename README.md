@@ -56,6 +56,13 @@ rather than pinning to the one that was current when a link was first
 resolved. `<https://manjaro.download/releases.json>` is the same
 information as JSON, keyed by release tag.
 
+### Retention
+
+The newest ten releases are kept; older ones are deleted from both GitHub
+and the bucket after each successful publish, so the two cannot disagree
+about what exists. The stable links always resolve, since they point at the
+newest release, which is never pruned.
+
 ### Polling for changes
 
 `/state` and `/<release-tag>/state` carry a hash of the contents in the
