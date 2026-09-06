@@ -66,27 +66,30 @@ jobs:
           release-tag: ${{ needs.prepare-release.outputs.release_tag }}
           build-mirror: ${{ env.MIRROR }}
           gpg-secret-key-base64: ${{ secrets.GPG_SECRET_BASE64 }}
+          # the action uploads the unsplit image straight to the bucket,
+          # before it splits the copy github's 2 GB asset cap requires.
+          # Mirroring the release afterwards would only ever recover the
+          # parts, which nobody can boot without reassembling them first.
+          r2-endpoint: ${{ secrets.R2_ENDPOINT }}
+          r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          r2-bucket: ${{ secrets.R2_BUCKET }}
+          r2-prefix: ${{ needs.prepare-release.outputs.release_tag }}/
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: repo
       - name: install tooling
         run: pip install boto3
-      - name: publish this image
-        # each build mirrors its own iso, so a finished edition is
-        # downloadable while the others are still compiling
+      - name: refresh the state files
+        # the image is already uploaded; this records that the bucket moved
+        # so pollers see a finished edition without waiting for the rest
         working-directory: repo
         env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
-        run: |
-          python3 scripts/publish_iso.py \
-            --release "$RELEASE_TAG" \
-            --edition "${{ matrix.edition }}" \
-            --branch "${{ matrix.branch }}"
+        run: python3 scripts/refresh_state.py
   prune:
     runs-on: ubuntu-latest
     needs: [prepare-release, build]
