@@ -60,6 +60,14 @@ rather than pinning to the one that was current when a link was first
 resolved. `<https://manjaro.download/releases.json>` is the same
 information as JSON, keyed by release tag.
 
+### Polling for changes
+
+`/state` and `/<release-tag>/state` carry a hash of the contents in the
+same BoxIt format the [package repository](https://packages.manjaro.download/state)
+and Manjaro's own mirrors serve, so tooling can poll a hash instead of
+walking the bucket. The hashes are derived from the objects themselves, so
+re-uploading identical bytes leaves them unchanged.
+
 ### How to join the multipart zip?
 
 To extract the regular images from multipart zip archive, download both the `z01` and the `zip` files, and run the command:

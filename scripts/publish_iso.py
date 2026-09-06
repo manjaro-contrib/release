@@ -20,6 +20,7 @@ import urllib.request
 import boto3
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
+from release_state import write_state
 
 # ISOs are large; a bigger part size keeps the multipart count sane
 TRANSFER = TransferConfig(multipart_chunksize=64 * 1024 * 1024)
@@ -93,6 +94,9 @@ def main() -> int:
         with urllib.request.urlopen(asset["url"]) as body:
             s3.upload_fileobj(body, bucket, key, Config=TRANSFER)
         log(f"{asset['name']}: published")
+
+    if not args.dry_run:
+        write_state(s3, bucket, log)
 
     log(f"{args.release}: {len(assets)} asset(s) in {bucket}")
     return 0

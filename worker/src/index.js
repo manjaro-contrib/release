@@ -90,6 +90,7 @@ ${bodyHtml}
 function byRelease(objects) {
   const releases = new Map();
   for (const obj of objects) {
+    if (obj.key === 'state' || obj.key.endsWith('/state')) continue;
     const slash = obj.key.indexOf('/');
     if (slash < 0) continue;
     const release = obj.key.slice(0, slash);
