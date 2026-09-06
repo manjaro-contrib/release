@@ -16,8 +16,7 @@ import os
 import subprocess
 import sys
 
-from publish_iso import s3_client
-from release_state import write_state
+from release_state import s3_client, write_state
 
 
 def log(msg: str) -> None:

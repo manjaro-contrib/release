@@ -16,10 +16,14 @@ Each combination builds independently, so one failing withholds none of
 the others, and at most six run at a time so a single run does not occupy
 every available runner. Every build uploads its own image as soon as it
 finishes, so a completed edition is downloadable while the others are
-still compiling.
+still compiling - the image goes to the bucket before it is split for the
+release, so it crosses the network once, as itself.
 
-Each build is attached to a GitHub release for review, and mirrored to the
-`releases` R2 bucket, which a worker in `worker/` serves: it lists the
+Each build uploads its image straight to the `releases` R2 bucket, and is
+also attached to a GitHub release for review. The two carry different
+things: a release asset is capped at 2 GB and every image is around 5 GB,
+so the release only ever holds a split zip, while the bucket holds the
+`.iso` itself, which a worker in `worker/` serves: it lists the
 bucket per release tag and streams the ISOs with range requests, so
 download managers can resume. `/releases.json` is the machine-readable
 equivalent of that listing.
