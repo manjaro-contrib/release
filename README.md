@@ -14,9 +14,6 @@ bucket per release tag and streams the ISOs with range requests, so
 download managers can resume. `/releases.json` is the machine-readable
 equivalent of that listing.
 
-Other editions can still be built one-off through the `On Demand x86 Builds`
-workflow.
-
 ## Where can I download an iso?
 
 <https://manjaro.download> lists every release, newest first. Each build is
@@ -41,8 +38,7 @@ For the edition this repository builds nightly:
 `<branch>` is one of `unstable`, `testing` or `stable`, and `<edition>` one
 of `sway`, `kde`, `kde-dev`, `gnome`, `gnome-next`, `xfce`, `cinnamon` or
 `i3` — though only combinations that have actually been built resolve;
-anything else answers `404`. Editions other than sway come from the
-`On Demand x86 Builds` workflow.
+anything else answers `404`. Only sway is built here.
 
 Any suffix the build produces works, and every one of these is a redirect,
 so `curl` needs `-L`:
@@ -67,14 +63,6 @@ same BoxIt format the [package repository](https://packages.manjaro.download/sta
 and Manjaro's own mirrors serve, so tooling can poll a hash instead of
 walking the bucket. The hashes are derived from the objects themselves, so
 re-uploading identical bytes leaves them unchanged.
-
-### How to join the multipart zip?
-
-To extract the regular images from multipart zip archive, download both the `z01` and the `zip` files, and run the command:
-
-```sh
-zip -FF manjaro-*.zip --out manjaro-full.zip && unzip manjaro-full.zip
-```
 
 ## Sources
 

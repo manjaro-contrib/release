@@ -1,7 +1,22 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base",
+    "config:recommended",
     "helpers:pinGitHubActionDigests"
+  ],
+  "packageRules": [
+    {
+      "description": "Actions are pinned to a digest, so an update is the only way to pick up a fix; group them into one pull request rather than one per action.",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "description": "These are ours and track a moving branch, so a digest bump is the only signal that they changed.",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["/^manjaro-contrib//", "/^boredland//"],
+      "groupName": "manjaro actions",
+      "schedule": ["at any time"]
+    }
   ]
 }
