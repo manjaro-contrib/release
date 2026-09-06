@@ -58,7 +58,7 @@ jobs:
             repo: https://github.com/manjaro-sway/iso-profiles
     steps:
       - name: x86_64 build
-        uses: manjaro-contrib/action-buildiso@accb6767c7484cd98119cd99a87dd94a84491639 # main
+        uses: manjaro-contrib/action-buildiso@99cc87759c1963f6b566d9b716751b9630562d11 # main
         with:
           iso-profiles-repo: ${{ matrix.repo }}
           edition: ${{ matrix.edition }}
