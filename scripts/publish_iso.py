@@ -26,6 +26,46 @@ from release_state import write_state
 TRANSFER = TransferConfig(multipart_chunksize=64 * 1024 * 1024)
 
 
+EDITIONS = [
+    "kde-dev",
+    "gnome-next",
+    "kde",
+    "gnome",
+    "xfce",
+    "cinnamon",
+    "i3",
+    "sway",
+]
+BRANCHES = ["unstable", "testing", "stable"]
+
+
+def describe(filename: str) -> tuple[str, str] | None:
+    """The edition and branch an ISO filename names, if it is one.
+
+    buildiso omits the branch for stable images, so its absence is what
+    identifies stable. Editions are matched longest-first, or kde-dev
+    would be read as edition kde on branch dev.
+    """
+    body = filename.removeprefix("manjaro-")
+    edition = next((e for e in EDITIONS if body.startswith(f"{e}-")), None)
+    if edition is None:
+        return None
+    rest = body[len(edition) + 1 :]
+    branch = next((b for b in BRANCHES if rest.startswith(f"{b}-")), "stable")
+    return edition, branch
+
+
+def matches(filename: str, edition: str | None, branch: str | None) -> bool:
+    if edition is None and branch is None:
+        return True
+    described = describe(filename)
+    if described is None:
+        return False
+    return (edition is None or described[0] == edition) and (
+        branch is None or described[1] == branch
+    )
+
+
 def log(msg: str) -> None:
     print(msg, file=sys.stderr, flush=True)
 
@@ -60,14 +100,24 @@ def already_there(s3, bucket: str, key: str, size: int) -> bool:
         raise
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--release", required=True, help="release tag to mirror")
     parser.add_argument(
         "--prefix", default="", help="key prefix inside the bucket"
     )
+    parser.add_argument(
+        "--edition",
+        help="mirror only this edition's assets, so each build can upload"
+        " its own images without waiting for the rest",
+    )
+    parser.add_argument(
+        "--branch",
+        help="mirror only this branch's assets; stable images carry no"
+        " branch in their filename, which is how stable is recognised",
+    )
     parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     bucket = os.environ["R2_BUCKET"]
     s3 = s3_client()
@@ -77,9 +127,11 @@ def main() -> int:
         for a in release_assets(args.release)
         # the tarballs github attaches to every release are not build output
         if not a["name"].endswith((".tar.gz", ".zip"))
+        and matches(a["name"], args.edition, args.branch)
     ]
     if not assets:
-        log(f"{args.release} has no ISO assets")
+        which = " ".join(filter(None, (args.branch, args.edition)))
+        log(f"{args.release} has no ISO assets" + (f" for {which}" if which else ""))
         return 1
 
     failed = []
