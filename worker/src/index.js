@@ -22,6 +22,38 @@ function humanSize(bytes) {
   return `${unit === 0 ? value : value.toFixed(1)} ${units[unit]}`;
 }
 
+
+const EDITIONS = ['kde-dev', 'gnome-next', 'kde', 'gnome', 'xfce', 'cinnamon', 'i3', 'sway'];
+const BRANCHES = ['unstable', 'testing', 'stable'];
+
+/**
+ * The edition and branch an ISO filename describes.
+ *
+ * buildiso names stable images without a branch component, so its absence
+ * is what identifies stable rather than a missing value.
+ */
+export function describe(filename) {
+  const body = filename.replace(/^manjaro-/, '');
+  // longest edition first, so kde-dev is not read as kde
+  const edition = EDITIONS.find((e) => body.startsWith(`${e}-`));
+  if (!edition) return null;
+  const rest = body.slice(edition.length + 1);
+  const branch = BRANCHES.find((b) => rest.startsWith(`${b}-`)) ?? 'stable';
+  const suffix = filename.slice(filename.indexOf('.iso'));
+  return { edition, branch, suffix };
+}
+
+/** The newest object matching an edition, branch and suffix. */
+export function resolveAlias(objects, edition, branch, suffix) {
+  const matches = objects.filter((o) => {
+    const name = o.key.slice(o.key.indexOf('/') + 1);
+    const d = describe(name);
+    return d && d.edition === edition && d.branch === branch && d.suffix === suffix;
+  });
+  // release tags sort chronologically, so the last key is the newest build
+  return matches.sort((a, b) => a.key.localeCompare(b.key)).pop();
+}
+
 const STYLE = `
 :root { color-scheme: light dark; }
 body { font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -77,8 +109,25 @@ async function listAll(bucket, prefix) {
   return objects;
 }
 
+/** Stable aliases for whatever the newest build of each edition is. */
+function renderAliases(objects) {
+  const seen = new Map();
+  for (const o of objects) {
+    const d = describe(o.key.slice(o.key.indexOf('/') + 1));
+    if (!d || d.suffix !== '.iso') continue;
+    seen.set(`${d.edition}-${d.branch}`, true);
+  }
+  if (!seen.size) return '';
+  const rows = [...seen.keys()]
+    .sort()
+    .map((name) => `<a class="row" href="/${name}.iso">${name}.iso</a>`)
+    .join('\n');
+  return `<h2>latest</h2>\n<p>these always point at the newest build</p>\n${rows}`;
+}
+
 function renderIndex(releases) {
   if (!releases.length) return page('releases', '<p>no releases published yet</p>');
+  const all = releases.flatMap(([, objects]) => objects);
   const sections = releases.map(([release, objects]) => {
     const rows = objects
       .filter((o) => !o.key.endsWith('/'))
@@ -92,7 +141,7 @@ function renderIndex(releases) {
       .join('\n');
     return `<h2>${escapeHtml(release)}</h2>\n${rows}`;
   });
-  return page('releases', sections.join('\n'));
+  return page('releases', renderAliases(all) + '\n' + sections.join('\n'));
 }
 
 export default {
@@ -119,6 +168,25 @@ export default {
       );
       return new Response(JSON.stringify(body, null, 2), {
         headers: { 'content-type': 'application/json; charset=utf-8' },
+      });
+    }
+
+    // stable aliases: /sway-unstable.iso redirects to the newest build, so a
+    // link can be published once instead of per release
+    const alias = key.match(
+      /^([a-z0-9-]+?)-(unstable|testing|stable)(\.iso(?:\.\w+)?)$/,
+    );
+    if (alias) {
+      const [, edition, branch, suffix] = alias;
+      const target = resolveAlias(await listAll(env.BUCKET, ''), edition, branch, suffix);
+      if (!target) return new Response('not found', { status: 404 });
+      return new Response(null, {
+        status: 302,
+        headers: {
+          location: `/${target.key}`,
+          // the target moves with every release, so never cache the hop
+          'cache-control': 'no-store',
+        },
       });
     }
 

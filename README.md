@@ -14,6 +14,19 @@ bucket per release tag and streams the ISOs with range requests, so
 download managers can resume. `/releases.json` is the machine-readable
 equivalent of that listing.
 
+Each edition and branch also has a stable link that redirects to the newest
+build, so it can be published once rather than per release:
+
+```
+https://<host>/sway-unstable.iso
+https://<host>/sway-unstable.iso.sha256
+https://<host>/kde-stable.iso
+```
+
+Any suffix the build produces works the same way - `.sig`, `.sha256`,
+`.pkgs`. Stable images carry no branch in their filename, which is how
+`stable` is recognised.
+
 Other editions can still be built one-off through the `On Demand x86 Builds`
 workflow.
 
