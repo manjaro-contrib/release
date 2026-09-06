@@ -9,7 +9,10 @@ Building preview ISOs for Manjaro Linux.
 We build unstable ISOs (against the manjaro unstable repository) with the ![stable](https://img.shields.io/badge/dynamic/json?label=stable&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dstable) kernel, for the sway edition.
 
 Each build is attached to a GitHub release for review, and mirrored to the
-`releases` R2 bucket, which is the download surface.
+`releases` R2 bucket, which a worker in `worker/` serves: it lists the
+bucket per release tag and streams the ISOs with range requests, so
+download managers can resume. `/releases.json` is the machine-readable
+equivalent of that listing.
 
 Other editions can still be built one-off through the `On Demand x86 Builds`
 workflow.
