@@ -80,7 +80,7 @@ function page(heading, bodyHtml) {
 <body>
 <h1>${escapeHtml(heading)}</h1>
 ${bodyHtml}
-<footer>packages are at <a href="https://packages.manjaro.download">packages.manjaro.download</a></footer>
+<footer>packages are at <a href="https://packages.manjaro.download">packages.manjaro.download</a> &middot; built by <a href="https://github.com/manjaro-contrib/release">manjaro-contrib/release</a></footer>
 </body>
 </html>
 `;
