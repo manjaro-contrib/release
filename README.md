@@ -18,9 +18,9 @@ Each edition and branch also has a stable link that redirects to the newest
 build, so it can be published once rather than per release:
 
 ```
-https://<host>/sway-unstable.iso
-https://<host>/sway-unstable.iso.sha256
-https://<host>/kde-stable.iso
+https://manjaro.download/sway-unstable.iso
+https://manjaro.download/sway-unstable.iso.sha256
+https://manjaro.download/kde-stable.iso
 ```
 
 Any suffix the build produces works the same way - `.sig`, `.sha256`,
