@@ -42,12 +42,15 @@ jobs:
     strategy:
       # one combination failing must not withhold the others
       fail-fast: false
-      # 18 combinations, each a full iso build; cap the concurrency so a
+      # 15 combinations, each a full iso build; cap the concurrency so a
       # run does not occupy every available runner for hours
       max-parallel: 6
       matrix:
-        # the editions manjaro.org offers for download
-        edition: [kde, xfce, gnome, cinnamon, i3, sway]
+        # the editions manjaro.org offers for download, less i3: its
+        # profile requests lib32-flex, which is not in the multilib the
+        # build mirror serves, so every i3 build fails in
+        # make_image_desktop(). Restore it once the profile is fixed.
+        edition: [kde, xfce, gnome, cinnamon, sway]
         branch: [stable, testing, unstable]
         include:
           - repo: https://gitlab.manjaro.org/profiles-and-settings/iso-profiles.git
