@@ -42,16 +42,20 @@ BRANCHES = ["unstable", "testing", "stable"]
 def describe(filename: str) -> tuple[str, str] | None:
     """The edition and branch an ISO filename names, if it is one.
 
-    buildiso omits the branch for stable images, so its absence is what
-    identifies stable. Editions are matched longest-first, or kde-dev
-    would be read as edition kde on branch dev.
+    buildiso names images manjaro-<edition>-<version>[-<branch>]-<date>,
+    so the branch follows the version rather than the edition, and stable
+    images carry no branch token at all - its absence is what identifies
+    stable. Editions are matched longest-first, or kde-dev would be read
+    as edition kde.
     """
     body = filename.removeprefix("manjaro-")
     edition = next((e for e in EDITIONS if body.startswith(f"{e}-")), None)
     if edition is None:
         return None
-    rest = body[len(edition) + 1 :]
-    branch = next((b for b in BRANCHES if rest.startswith(f"{b}-")), "stable")
+    # the branch sits between the version and the date, so look at the
+    # hyphen-separated fields rather than the start of the remainder
+    fields = body[len(edition) + 1 :].split("-")
+    branch = next((b for b in BRANCHES if b in fields), "stable")
     return edition, branch
 
 
@@ -125,8 +129,10 @@ def main(argv: list[str] | None = None) -> int:
     assets = [
         a
         for a in release_assets(args.release)
-        # the tarballs github attaches to every release are not build output
-        if not a["name"].endswith((".tar.gz", ".zip"))
+        # buildiso splits each image into .zip/.z01/... to stay under
+        # github's asset size cap, so those *are* the build output; only
+        # the source archives github attaches itself are not
+        if describe(a["name"]) is not None
         and matches(a["name"], args.edition, args.branch)
     ]
     if not assets:
