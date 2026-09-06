@@ -1,6 +1,6 @@
 # Manjaro Release Review
 
-[![iso_build](https://github.com/manjaro/release-review/workflows/iso_build/badge.svg)](https://github.com/manjaro/release-review/actions)
+[![iso_build](https://github.com/manjaro-contrib/release/actions/workflows/iso_build.yaml/badge.svg)](https://github.com/manjaro-contrib/release/actions)
 
 Building preview ISOs for Manjaro Linux.
 
@@ -14,25 +14,51 @@ bucket per release tag and streams the ISOs with range requests, so
 download managers can resume. `/releases.json` is the machine-readable
 equivalent of that listing.
 
-Each edition and branch also has a stable link that redirects to the newest
-build, so it can be published once rather than per release:
-
-```
-https://manjaro.download/sway-unstable.iso
-https://manjaro.download/sway-unstable.iso.sha256
-https://manjaro.download/kde-stable.iso
-```
-
-Any suffix the build produces works the same way - `.sig`, `.sha256`,
-`.pkgs`. Stable images carry no branch in their filename, which is how
-`stable` is recognised.
-
 Other editions can still be built one-off through the `On Demand x86 Builds`
 workflow.
 
 ## Where can I download an iso?
 
-Images are built and uploaded in a relatively regular interval to [github releases](https://github.com/manjaro/release-review/releases)
+<https://manjaro.download> lists every release, newest first. Each build is
+also attached to a [GitHub release](../../releases) for review.
+
+### Stable download links
+
+Every edition and branch has a permanent URL that redirects to the newest
+build, so it can be linked once instead of being updated per release:
+
+    https://manjaro.download/<edition>-<branch>.iso
+
+For the edition this repository builds nightly:
+
+| URL | |
+| --- | --- |
+| <https://manjaro.download/sway-unstable.iso> | the image |
+| <https://manjaro.download/sway-unstable.iso.sig> | its signature |
+| <https://manjaro.download/sway-unstable.iso.sha256> | its checksum |
+| <https://manjaro.download/sway-unstable.iso.pkgs> | the package list |
+
+`<branch>` is one of `unstable`, `testing` or `stable`, and `<edition>` one
+of `sway`, `kde`, `kde-dev`, `gnome`, `gnome-next`, `xfce`, `cinnamon` or
+`i3` — though only combinations that have actually been built resolve;
+anything else answers `404`. Editions other than sway come from the
+`On Demand x86 Builds` workflow.
+
+Any suffix the build produces works, and every one of these is a redirect,
+so `curl` needs `-L`:
+
+```sh
+# -O names the file after the url, so the version is lost; -J takes the
+# name from the redirect target instead
+curl -LOJ https://manjaro.download/sway-unstable.iso
+curl -LOJ https://manjaro.download/sway-unstable.iso.sha256
+sha256sum -c manjaro-sway-*.iso.sha256
+```
+
+The redirects are deliberately uncached, so they follow each nightly build
+rather than pinning to the one that was current when a link was first
+resolved. `<https://manjaro.download/releases.json>` is the same
+information as JSON, keyed by release tag.
 
 ### How to join the multipart zip?
 

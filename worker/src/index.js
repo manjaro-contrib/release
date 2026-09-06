@@ -180,10 +180,14 @@ export default {
       const [, edition, branch, suffix] = alias;
       const target = resolveAlias(await listAll(env.BUCKET, ''), edition, branch, suffix);
       if (!target) return new Response('not found', { status: 404 });
+      const filename = target.key.slice(target.key.indexOf('/') + 1);
       return new Response(null, {
         status: 302,
         headers: {
           location: `/${target.key}`,
+          // so curl -OJ and browsers save the versioned name rather than
+          // the alias, which would lose the version
+          'content-disposition': `attachment; filename="${filename}"`,
           // the target moves with every release, so never cache the hop
           'cache-control': 'no-store',
         },
