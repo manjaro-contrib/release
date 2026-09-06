@@ -6,9 +6,13 @@ Building preview ISOs for Manjaro Linux.
 
 ## Description
 
-We build every edition manjaro.org offers for download - `kde`, `xfce`,
-`gnome`, `cinnamon`, `i3` and `sway` - against all three Manjaro branches,
-so 18 images per run.
+We build `kde`, `xfce`, `gnome`, `cinnamon` and `sway` against all three
+Manjaro branches, so 15 images per run.
+
+`i3` is one of the editions manjaro.org offers but is not built here: its
+profile requests `lib32-flex`, which the build mirror's multilib does not
+carry, so every i3 build fails while installing the desktop. Images built
+before that broke are still served.
 
 Stable images ship the ![longterm](https://img.shields.io/badge/dynamic/json?label=longterm&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dlongterm) kernel; testing and unstable ship the ![stable](https://img.shields.io/badge/dynamic/json?label=stable&query=%24%5B%3A1%5D.packageName&url=https%3A%2F%2Fkernel-info.manjaro-sway.download%2F%3Fcategory%3Dstable) one.
 
@@ -54,12 +58,13 @@ For the edition this repository builds nightly:
 | <https://manjaro.download/sway-unstable.iso.sha256> | its checksum |
 | <https://manjaro.download/sway-unstable.iso.pkgs> | the package list |
 
-The same holds for `kde`, `xfce`, `gnome`, `cinnamon` and `i3`.
+The same holds for `kde`, `xfce`, `gnome` and `cinnamon`.
 
 `<branch>` is one of `unstable`, `testing` or `stable`, and `<edition>` one
 of `sway`, `kde`, `kde-dev`, `gnome`, `gnome-next`, `xfce`, `cinnamon` or
 `i3` — though only combinations that have actually been built resolve;
-anything else answers `404`.
+anything else answers `404`. `i3` is no longer built, so only the images
+from before it broke resolve.
 
 Any suffix the build produces works, and every one of these is a redirect,
 so `curl` needs `-L`:
