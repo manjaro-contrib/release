@@ -14,7 +14,9 @@ Stable images ship the ![longterm](https://img.shields.io/badge/dynamic/json?lab
 
 Each combination builds independently, so one failing withholds none of
 the others, and at most six run at a time so a single run does not occupy
-every available runner.
+every available runner. Every build uploads its own image as soon as it
+finishes, so a completed edition is downloadable while the others are
+still compiling.
 
 Each build is attached to a GitHub release for review, and mirrored to the
 `releases` R2 bucket, which a worker in `worker/` serves: it lists the
@@ -71,12 +73,14 @@ information as JSON, keyed by release tag.
 The newest ten releases are kept; older ones are deleted from both GitHub
 and the bucket, so the two cannot disagree about what exists.
 
-Pruning only runs once the new release has uploaded completely. Until then
+Pruning only runs once every edition has uploaded completely. Until then
 the older images are the only ones anyone can download, so a failed or
 partial upload leaves them untouched: each object is checked for the right
-size after upload, a truncated one is removed rather than left to satisfy
-that check later, and any failure stops the run before pruning. The stable
-links keep resolving to the last complete release throughout.
+size after upload, and a truncated one is removed rather than left to
+satisfy that check later. A single failed edition holds back pruning for
+the whole run, because that edition's newest working image is the one in
+an older release. The stable links keep resolving to a complete image
+throughout.
 
 ### Polling for changes
 
