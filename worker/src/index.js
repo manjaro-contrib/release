@@ -37,8 +37,11 @@ export function describe(filename) {
   // longest edition first, so kde-dev is not read as kde
   const edition = EDITIONS.find((e) => body.startsWith(`${e}-`));
   if (!edition) return null;
-  const rest = body.slice(edition.length + 1);
-  const branch = BRANCHES.find((b) => rest.startsWith(`${b}-`)) ?? 'stable';
+  // buildiso names images manjaro-<edition>-<version>[-<branch>]-<date>, so
+  // the branch follows the version rather than the edition; look at the
+  // hyphen-separated fields instead of the start of the remainder
+  const fields = body.slice(edition.length + 1).split('-');
+  const branch = BRANCHES.find((b) => fields.includes(b)) ?? 'stable';
   const suffix = filename.slice(filename.indexOf('.iso'));
   return { edition, branch, suffix };
 }
@@ -112,18 +115,51 @@ async function listAll(bucket, prefix) {
   return objects;
 }
 
+// the image first, then what verifies it, then what describes it - the
+// order someone downloading actually needs them in
+const SUFFIX_ORDER = [
+  '.iso',
+  '.iso.sig',
+  '.iso.sha1',
+  '.iso.sha256',
+  '.iso.sha512',
+  '.iso.pkgs',
+];
+
+// the split zip exists only to fit github's 2 GB asset cap; this bucket
+// holds the image whole, so a part here is a leftover from when releases
+// were mirrored back rather than uploaded directly. Aliasing one would
+// point "latest" at whichever superseded build still has parts.
+const SPLIT = /\.(zip|z\d+)$/;
+
 /** Stable aliases for whatever the newest build of each edition is. */
 function renderAliases(objects) {
+  // every suffix published for an edition gets an alias, not just the
+  // image: a checksum or signature is useless if it names a build that
+  // has since been superseded
   const seen = new Map();
   for (const o of objects) {
     const d = describe(o.key.slice(o.key.indexOf('/') + 1));
-    if (!d || d.suffix !== '.iso') continue;
-    seen.set(`${d.edition}-${d.branch}`, true);
+    if (!d || SPLIT.test(d.suffix)) continue;
+    const name = `${d.edition}-${d.branch}`;
+    if (!seen.has(name)) seen.set(name, new Set());
+    seen.get(name).add(d.suffix);
   }
   if (!seen.size) return '';
   const rows = [...seen.keys()]
     .sort()
-    .map((name) => `<a class="row" href="/${name}.iso">${name}.iso</a>`)
+    .map((name) => {
+      const suffixes = [...seen.get(name)].sort(
+        // unknown suffixes keep working, they just sort last
+        (a, b) =>
+          (SUFFIX_ORDER.indexOf(a) + 1 || Infinity) -
+            (SUFFIX_ORDER.indexOf(b) + 1 || Infinity) || a.localeCompare(b),
+      );
+      const links = suffixes
+        .map((s) => `<a href="/${name}${s}">${s.replace('.iso', '') || 'image'}</a>`)
+        .join(' ');
+      return `<span class="row"><span>${name}.iso</span><span>${links}</span></span>`;
+    })
     .join('\n');
   return `<h2>latest</h2>\n<p>these always point at the newest build</p>\n${rows}`;
 }
