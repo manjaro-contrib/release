@@ -28,7 +28,7 @@ dataset = "iso_downloads"
 # last-write-wins
 [[kv_namespaces]]
 binding = "STATS"
-id = "PLACEHOLDER_REPLACE_WITH_NAMESPACE_ID"
+id = "1e8176d04cfd4606a379e7b46b373dd0"
 
 [triggers]
 # the 2nd rather than the 1st: a month's final downloads must be
