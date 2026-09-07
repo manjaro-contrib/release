@@ -131,7 +131,11 @@ test('the scheduled handler archives the month that closed', async () => {
     { waitUntil: (p) => waits.push(p) },
   );
   await Promise.all(waits);
-  assert.match(seen.at(-1), /toDate\('2026-02-01'\)/, 'february, not march');
+  assert.match(
+    seen.at(-1),
+    /timestamp >= toDateTime\('2026-02-01 00:00:00'\)/,
+    'february, not march',
+  );
   assert.equal(await e.STATS.get('month:2026-02'), JSON.stringify({ xfce: { stable: 4 } }));
 });
 

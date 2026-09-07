@@ -274,6 +274,13 @@ async function query(env, sql) {
 
 export const MONTH_KEY = (d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 
+/** The month after this one, as YYYY-MM, so a range can be half-open. */
+export function nextMonth(month) {
+  const [year, m] = month.split('-').map(Number);
+  const d = new Date(Date.UTC(year, m, 1));
+  return MONTH_KEY(d);
+}
+
 /**
  * Archive a closed month as one kv key.
  *
@@ -287,7 +294,8 @@ export async function rollup(env, month) {
     env,
     `SELECT blob2 AS edition, blob3 AS branch, SUM(_sample_interval) AS downloads
      FROM "release-downloads"
-     WHERE toStartOfMonth(timestamp) = toDate('${month}-01')
+     WHERE timestamp >= toDateTime('${month}-01 00:00:00')
+       AND timestamp < toDateTime('${nextMonth(month)}-01 00:00:00')
      GROUP BY edition, branch`,
   );
   if (!rows.length) return 0;

@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { describe, resolveAlias, record, rollup, MONTH_KEY } from '../src/index.js';
+import { describe, resolveAlias, record, rollup, MONTH_KEY, nextMonth } from '../src/index.js';
 
 /** Collects what the worker would have written. */
 function fakeEnv({ rows = [] } = {}) {
@@ -168,4 +168,25 @@ test('describe and resolveAlias still behave', () => {
     resolveAlias(objects, 'xfce', 'unstable', '.iso').key,
     'rc-2/manjaro-xfce-26.1.1-unstable-260907-linux72.iso',
   );
+});
+
+test('the month range is half-open, and wraps the year', () => {
+  assert.equal(nextMonth('2026-02'), '2026-03');
+  // december must roll into the next year, not month 13
+  assert.equal(nextMonth('2026-12'), '2027-01');
+});
+
+test('the rollup filters on a half-open range, not toDate', async () => {
+  // toDate rejects a string in cloudflare's dialect, so a date literal
+  // would fail every run
+  const env = fakeEnv();
+  let sql = '';
+  global.fetch = async (_u, init) => {
+    sql = init.body;
+    return { ok: true, json: async () => ({ data: [] }) };
+  };
+  await rollup(env, '2026-12');
+  assert.doesNotMatch(sql, /toDate\(/);
+  assert.match(sql, /timestamp >= toDateTime\('2026-12-01 00:00:00'\)/);
+  assert.match(sql, /timestamp < toDateTime\('2027-01-01 00:00:00'\)/);
 });
