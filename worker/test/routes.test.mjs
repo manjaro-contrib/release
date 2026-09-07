@@ -246,3 +246,35 @@ test('with no archive yet, no empty section appears', async () => {
   const html = await (await worker.fetch(get('/stats'), env())).text();
   assert.doesNotMatch(html, /archive/);
 });
+
+test('the favicon is served, and declared in the page', async () => {
+  const res = await worker.fetch(get('/favicon.svg'), env());
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /image\/svg\+xml/);
+  const body = await res.text();
+  assert.match(body, /^<svg /);
+  assert.doesNotMatch(body, /<!--/, 'comments are stripped from the inlined copy');
+
+  // a browser that is not told will only guess /favicon.ico
+  stubFetch([{ label: 'sway', downloads: '1' }]);
+  const html = await (await worker.fetch(get('/stats'), env())).text();
+  assert.match(html, /rel="icon" href="\/favicon\.svg"/);
+});
+
+test('an .ico request gets the same svg', async () => {
+  const res = await worker.fetch(get('/favicon.ico'), env());
+  assert.equal(res.status, 200);
+  assert.match(await res.text(), /^<svg /);
+});
+
+test('the favicon route does not shadow a release object', async () => {
+  // a release is a prefix, so favicon.svg can only ever be at the root
+  const e = env();
+  let asked = null;
+  e.BUCKET.get = async (k) => {
+    asked = k;
+    return null;
+  };
+  await worker.fetch(get('/rc-1/favicon.svg'), e);
+  assert.equal(asked, 'rc-1/favicon.svg', 'a nested path still reaches the bucket');
+});

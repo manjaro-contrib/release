@@ -7,6 +7,8 @@
  * or miss one that is.
  */
 
+import { FAVICON } from './favicon.js';
+
 const TITLE = 'Manjaro Sway release candidates';
 
 const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -81,6 +83,7 @@ function page(heading, bodyHtml) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>${escapeHtml(heading)} — ${TITLE}</title>
 <style>${STYLE}</style>
 </head>
@@ -439,6 +442,17 @@ export default {
 
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response('method not allowed', { status: 405 });
+    }
+
+    if (key === 'favicon.svg' || key === 'favicon.ico') {
+      // one svg answers both: browsers asking for .ico accept an svg body,
+      // and a second rasterised copy would be another thing to keep in step
+      return new Response(FAVICON, {
+        headers: {
+          'content-type': 'image/svg+xml',
+          'cache-control': 'public, max-age=86400',
+        },
+      });
     }
 
     // machine-readable equivalent of the listing, replacing release.json
