@@ -201,13 +201,7 @@ function renderStats({ heading, rows, crumbs, note, extra = '' }) {
   );
 }
 
-/**
- * Links to the archived months.
- *
- * Analytics engine keeps three months, so without this the older
- * aggregates exist in kv but can only be reached by guessing the query
- * string. Listing them is what makes the archive part of the page.
- */
+/** Links to the months archived past analytics engine's three. */
 async function renderArchive(env, current) {
   const months = JSON.parse((await env.STATS.get('months')) ?? '[]');
   if (!months.length) return '';
@@ -248,9 +242,8 @@ function renderIndex(releases) {
 /**
  * Record one download.
  *
- * Only a whole-image GET counts. A resumed multi-gigabyte ISO issues many
- * range requests, so counting 206 would report one download as dozens; a
- * conditional request that revalidates transfers nothing at all.
+ * Only a whole-image GET counts: a resumed ISO issues many range requests,
+ * so counting 206 would report one download as dozens.
  */
 export function record(env, key, status, method) {
   if (!env.ANALYTICS_ENGINE) return;
@@ -313,10 +306,8 @@ export function nextMonth(month) {
 /**
  * Archive a closed month as one kv key.
  *
- * Aggregated to edition and branch rather than release: per-release detail
- * answers a question that expires with the release, and would grow the
- * value without bound. The release axis stays available in analytics
- * engine for as long as it is interesting.
+ * Aggregated to edition and branch: per-release detail expires with the
+ * release, and would grow the value without bound.
  */
 export async function rollup(env, month) {
   const rows = await query(
@@ -344,12 +335,7 @@ export async function rollup(env, month) {
   return rows.length;
 }
 
-/**
- * Build the stats view for a set of filters.
- *
- * Drilling down narrows the query rather than fetching more: each view is
- * one grouped query over the axis below the one being filtered.
- */
+/** Build the stats view: one grouped query over the first unpinned axis. */
 async function statsView(env, params) {
   const release = params.get('release');
   const edition = params.get('edition');
@@ -445,8 +431,7 @@ export default {
     }
 
     if (key === 'favicon.svg' || key === 'favicon.ico') {
-      // one svg answers both: browsers asking for .ico accept an svg body,
-      // and a second rasterised copy would be another thing to keep in step
+      // .ico callers accept an svg body, so one file serves both
       return new Response(FAVICON, {
         headers: {
           'content-type': 'image/svg+xml',
