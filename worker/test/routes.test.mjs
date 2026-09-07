@@ -176,3 +176,20 @@ test('a download is still counted while stats are unconfigured', async () => {
   await worker.fetch(get('/rc-1/manjaro-xfce-26.1.1-unstable-260907-linux72.iso'), e);
   assert.equal(written.length, 1, 'counting must not depend on the read token');
 });
+
+test('the listing links to the stats page', async () => {
+  // it shipped unlinked once: the page worked and nothing pointed at it
+  const e = env();
+  e.BUCKET.list = async () => ({
+    objects: [{ key: 'rc-1/manjaro-sway-26.1.1-unstable-260907-linux72.iso', size: 1 }],
+    truncated: false,
+  });
+  const html = await (await worker.fetch(get('/'), e)).text();
+  assert.match(html, /href="\/stats"/);
+});
+
+test('the stats page links back out of itself', async () => {
+  stubFetch([{ label: 'sway', downloads: '1' }]);
+  const html = await (await worker.fetch(get('/stats'), env())).text();
+  assert.match(html, /href="\/stats"/, 'the shared footer carries the link');
+});
