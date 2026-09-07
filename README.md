@@ -32,6 +32,32 @@ bucket per release tag and streams the ISOs with range requests, so
 download managers can resume. `/releases.json` is the machine-readable
 equivalent of that listing.
 
+## Download stats
+
+`/stats` counts ISO downloads, publicly, and drills down from edition to
+branch to release to kernel. `/stats.json` is the same data.
+
+Only a whole-image `GET` that returns `200` counts. A resumed download
+issues many range requests and a revalidation transfers nothing, so
+counting either would report one download as several. Signatures and
+checksums are not counted.
+
+Two stores, because neither alone is enough:
+
+| | holds | for |
+| --- | --- | --- |
+| analytics engine | release, edition, branch, version, kernel | three months |
+| kv | month, edition, branch | indefinitely |
+
+Analytics engine writes are non-blocking, so counting costs a download
+nothing, but it retains three months. A cron on the 2nd of each month
+aggregates the month that closed into a single kv key, which is why the
+drill-down is detailed recently and a trend further back.
+
+Nothing writes kv from a request. Kv allows one write per second per key
+and propagates for up to 60s, so a counter incremented per download would
+lose counts to last-write-wins.
+
 ## Where can I download an iso?
 
 <https://manjaro.download> lists every release, newest first. Each build is

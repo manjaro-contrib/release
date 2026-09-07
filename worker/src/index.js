@@ -69,6 +69,10 @@ h2 { font-size: .95rem; font-weight: 600; margin: 1.6rem 0 .3rem; opacity: .75; 
 i { opacity: .6; font-style: normal; }
 p { opacity: .7; }
 footer { margin-top: 2rem; opacity: .7; }
+.bar { display: inline-block; height: .55em; margin-left: .6rem;
+       background: currentColor; opacity: .25; border-radius: 1px;
+       vertical-align: middle; max-width: 22rem; }
+nav { opacity: .7; margin-bottom: .4rem; }
 `;
 
 function page(heading, bodyHtml) {
@@ -164,6 +168,33 @@ function renderAliases(objects) {
   return `<h2>latest</h2>\n<p>these always point at the newest build</p>\n${rows}`;
 }
 
+/** A bar whose width is relative to the largest count on the page. */
+function bar(count, max) {
+  const width = max > 0 ? Math.max(1, Math.round((count / max) * 100)) : 0;
+  return `<span class="bar" style="width:${width}%"></span>`;
+}
+
+function renderStats({ heading, rows, crumbs, note }) {
+  if (!rows.length) {
+    return page(heading, `${crumbs}<p>${escapeHtml(note ?? 'nothing recorded yet')}</p>`);
+  }
+  const max = Math.max(...rows.map((r) => r.count));
+  const total = rows.reduce((sum, r) => sum + r.count, 0);
+  const body = rows
+    .map((r) => {
+      const label = escapeHtml(r.label);
+      const cell = r.href
+        ? `<a href="${escapeHtml(r.href)}">${label}</a>`
+        : label;
+      return `<span class="row"><span>${cell}${bar(r.count, max)}</span><i>${r.count.toLocaleString('en-US')}</i></span>`;
+    })
+    .join('\n');
+  return page(
+    heading,
+    `${crumbs}<p>${total.toLocaleString('en-US')} downloads${note ? ` &middot; ${escapeHtml(note)}` : ''}</p>\n${body}`,
+  );
+}
+
 function renderIndex(releases) {
   if (!releases.length) return page('releases', '<p>no releases published yet</p>');
   const all = releases.flatMap(([, objects]) => objects);
@@ -181,6 +212,175 @@ function renderIndex(releases) {
     return `<h2>${escapeHtml(release)}</h2>\n${rows}`;
   });
   return page('releases', renderAliases(all) + '\n' + sections.join('\n'));
+}
+
+// ---------------------------------------------------------------- stats
+
+/**
+ * Record one download.
+ *
+ * Only a whole-image GET counts. A resumed multi-gigabyte ISO issues many
+ * range requests, so counting 206 would report one download as dozens; a
+ * conditional request that revalidates transfers nothing at all.
+ */
+export function record(env, key, status, method) {
+  if (!env.DOWNLOADS) return;
+  if (method !== 'GET' || status !== 200) return;
+  const slash = key.indexOf('/');
+  if (slash < 0) return;
+  const release = key.slice(0, slash);
+  const name = key.slice(slash + 1);
+  const d = describe(name);
+  if (!d || d.suffix !== '.iso') return;
+  // version and kernel are not in describe()'s contract, and a name that
+  // does not carry them still counts - the fields are just empty
+  const fields = name
+    .replace(/^manjaro-/, '')
+    .slice(d.edition.length + 1, name.replace(/^manjaro-/, '').indexOf('.iso'))
+    .split('-');
+  const version = fields[0] ?? '';
+  const kernel = fields.find((f) => f.startsWith('linux')) ?? '';
+  env.DOWNLOADS.writeDataPoint({
+    // one index only, 96 bytes: edition is the axis worth keeping
+    // unsampled, and it is short
+    indexes: [d.edition],
+    blobs: [release, d.edition, d.branch, version, kernel],
+    doubles: [1],
+  });
+}
+
+const SQL_API = (account) =>
+  `https://api.cloudflare.com/client/v4/accounts/${account}/analytics_engine/sql`;
+
+/** Run one query against the analytics engine sql api. */
+async function query(env, sql) {
+  const res = await fetch(SQL_API(env.ACCOUNT_ID), {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.ANALYTICS_TOKEN}`,
+      'content-type': 'text/plain',
+    },
+    body: sql,
+  });
+  if (!res.ok) throw new Error(`analytics query failed: ${res.status}`);
+  const body = await res.json();
+  return body.data ?? [];
+}
+
+export const MONTH_KEY = (d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+
+/**
+ * Archive a closed month as one kv key.
+ *
+ * Aggregated to edition and branch rather than release: per-release detail
+ * answers a question that expires with the release, and would grow the
+ * value without bound. The release axis stays available in analytics
+ * engine for as long as it is interesting.
+ */
+export async function rollup(env, month) {
+  const rows = await query(
+    env,
+    `SELECT blob2 AS edition, blob3 AS branch, SUM(_sample_interval) AS downloads
+     FROM iso_downloads
+     WHERE toStartOfMonth(timestamp) = toDate('${month}-01')
+     GROUP BY edition, branch`,
+  );
+  if (!rows.length) return 0;
+  const totals = {};
+  for (const r of rows) {
+    totals[r.edition] ??= {};
+    totals[r.edition][r.branch] = Number(r.downloads);
+  }
+  await env.STATS.put(`month:${month}`, JSON.stringify(totals));
+  // an index, so the page never has to list keys to know what exists
+  const known = JSON.parse((await env.STATS.get('months')) ?? '[]');
+  if (!known.includes(month)) {
+    known.push(month);
+    known.sort();
+    await env.STATS.put('months', JSON.stringify(known));
+  }
+  return rows.length;
+}
+
+/**
+ * Build the stats view for a set of filters.
+ *
+ * Drilling down narrows the query rather than fetching more: each view is
+ * one grouped query over the axis below the one being filtered.
+ */
+async function statsView(env, params) {
+  const release = params.get('release');
+  const edition = params.get('edition');
+  const branch = params.get('branch');
+  const month = params.get('month');
+
+  // an archived month has no release axis left, so it is answered from kv
+  if (month) {
+    const stored = await env.STATS.get(`month:${month}`);
+    if (!stored) return renderStats({ heading: `stats ${month}`, rows: [], crumbs: crumbsFor({}), note: `nothing archived for ${month}` });
+    const totals = JSON.parse(stored);
+    const rows = Object.entries(totals)
+      .flatMap(([e, branches]) => Object.entries(branches).map(([b, count]) => ({ label: `${e} ${b}`, count })))
+      .sort((a, b) => b.count - a.count);
+    return renderStats({
+      heading: `stats ${month}`,
+      rows,
+      crumbs: crumbsFor({ month }),
+      note: 'archived month, aggregated to edition and branch',
+    });
+  }
+
+  const where = [];
+  if (release) where.push(`blob1 = '${sqlSafe(release)}'`);
+  if (edition) where.push(`blob2 = '${sqlSafe(edition)}'`);
+  if (branch) where.push(`blob3 = '${sqlSafe(branch)}'`);
+  const filter = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  // group by the first axis not already pinned, so each click narrows
+  const axis = !edition ? { col: 'blob2', name: 'edition', param: 'edition' }
+    : !branch ? { col: 'blob3', name: 'branch', param: 'branch' }
+    : !release ? { col: 'blob1', name: 'release', param: 'release' }
+    : { col: 'blob5', name: 'kernel', param: null };
+
+  const rows = await query(
+    env,
+    `SELECT ${axis.col} AS label, SUM(_sample_interval) AS downloads
+     FROM iso_downloads ${filter}
+     GROUP BY label ORDER BY downloads DESC LIMIT 100`,
+  );
+
+  const carry = new URLSearchParams();
+  for (const [k, v] of params) if (v) carry.set(k, v);
+  return renderStats({
+    heading: 'downloads',
+    rows: rows.map((r) => {
+      const next = new URLSearchParams(carry);
+      if (axis.param) next.set(axis.param, r.label);
+      return {
+        label: r.label || `(no ${axis.name})`,
+        count: Number(r.downloads),
+        href: axis.param && r.label ? `/stats?${next}` : null,
+      };
+    }),
+    crumbs: crumbsFor({ release, edition, branch }),
+    note: `by ${axis.name}, last three months`,
+  });
+}
+
+/** Literal quoting: these values reach a sql string. */
+function sqlSafe(value) {
+  return value.replace(/'/g, "''").slice(0, 96);
+}
+
+function crumbsFor(active) {
+  const parts = Object.entries(active).filter(([, v]) => v);
+  const links = ['<a href="/stats">all</a>'];
+  const carry = new URLSearchParams();
+  for (const [k, v] of parts) {
+    carry.set(k, v);
+    links.push(`<a href="/stats?${carry}">${escapeHtml(v)}</a>`);
+  }
+  return `<nav>${links.join(' / ')}</nav>`;
 }
 
 export default {
@@ -208,6 +408,34 @@ export default {
       return new Response(JSON.stringify(body, null, 2), {
         headers: { 'content-type': 'application/json; charset=utf-8' },
       });
+    }
+
+    if (key === 'stats') {
+      return new Response(await statsView(env, url.searchParams), {
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      });
+    }
+
+    if (key === 'stats.json') {
+      const months = JSON.parse((await env.STATS.get('months')) ?? '[]');
+      const archive = {};
+      for (const m of months) {
+        const stored = await env.STATS.get(`month:${m}`);
+        if (stored) archive[m] = JSON.parse(stored);
+      }
+      const recent = await query(
+        env,
+        `SELECT blob1 AS release, blob2 AS edition, blob3 AS branch,
+                blob4 AS version, blob5 AS kernel,
+                SUM(_sample_interval) AS downloads
+         FROM iso_downloads
+         GROUP BY release, edition, branch, version, kernel
+         ORDER BY downloads DESC LIMIT 1000`,
+      );
+      return new Response(
+        JSON.stringify({ months: archive, recent }, null, 2),
+        { headers: { 'content-type': 'application/json; charset=utf-8' } },
+      );
     }
 
     // stable aliases: /sway-unstable.iso redirects to the newest build, so a
@@ -255,9 +483,18 @@ export default {
     headers.set('accept-ranges', 'bytes');
 
     const status = object.body ? (request.headers.get('range') ? 206 : 200) : 304;
+    record(env, key, status, request.method);
     return new Response(request.method === 'HEAD' ? null : object.body, {
       status,
       headers,
     });
+  },
+
+  async scheduled(event, env, ctx) {
+    // the month that just closed, derived from the trigger's own time so a
+    // late or re-run invocation archives the same month rather than drifting
+    const now = new Date(event.scheduledTime);
+    const previous = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    ctx.waitUntil(rollup(env, MONTH_KEY(previous)));
   },
 };
