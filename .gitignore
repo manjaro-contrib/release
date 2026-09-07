@@ -1,3 +1,4 @@
 .wrangler/
 __pycache__/
 download/
+.env
