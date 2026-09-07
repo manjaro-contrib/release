@@ -58,6 +58,11 @@ Nothing writes kv from a request. Kv allows one write per second per key
 and propagates for up to 60s, so a counter incremented per download would
 lose counts to last-write-wins.
 
+Reading the recent detail needs an API token with Account Analytics
+read, as `ANALYTICS_TOKEN`. Counting does not: downloads are recorded
+whether or not it is set, so the token can be added later without
+losing anything in between.
+
 ## Where can I download an iso?
 
 <https://manjaro.download> lists every release, newest first. Each build is

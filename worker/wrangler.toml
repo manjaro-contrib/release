@@ -30,6 +30,11 @@ dataset = "iso_downloads"
 binding = "STATS"
 id = "1e8176d04cfd4606a379e7b46b373dd0"
 
+# not a secret: it is already in this file above, and the sql api needs it
+# at runtime. The token that goes with it IS a secret, set separately.
+[vars]
+ACCOUNT_ID = "ed740e1b87e525691b947ca317a3cb90"
+
 [triggers]
 # the 2nd rather than the 1st: a month's final downloads must be
 # queryable before it is archived, and ingestion is not instant

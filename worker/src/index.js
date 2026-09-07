@@ -249,11 +249,16 @@ export function record(env, key, status, method) {
   });
 }
 
+class NotConfigured extends Error {}
+
 const SQL_API = (account) =>
   `https://api.cloudflare.com/client/v4/accounts/${account}/analytics_engine/sql`;
 
 /** Run one query against the analytics engine sql api. */
 async function query(env, sql) {
+  // the page is public, so an unset token must read as "not configured"
+  // rather than a 500 that looks like the stats are broken
+  if (!env.ANALYTICS_TOKEN) throw new NotConfigured();
   const res = await fetch(SQL_API(env.ACCOUNT_ID), {
     method: 'POST',
     headers: {
@@ -411,7 +416,14 @@ export default {
     }
 
     if (key === 'stats') {
-      return new Response(await statsView(env, url.searchParams), {
+      let body;
+      try {
+        body = await statsView(env, url.searchParams);
+      } catch (e) {
+        if (!(e instanceof NotConfigured)) throw e;
+        body = page('downloads', '<p>stats are not configured yet</p>');
+      }
+      return new Response(body, {
         headers: { 'content-type': 'text/html; charset=utf-8' },
       });
     }
@@ -423,15 +435,21 @@ export default {
         const stored = await env.STATS.get(`month:${m}`);
         if (stored) archive[m] = JSON.parse(stored);
       }
-      const recent = await query(
-        env,
-        `SELECT blob1 AS release, blob2 AS edition, blob3 AS branch,
-                blob4 AS version, blob5 AS kernel,
-                SUM(_sample_interval) AS downloads
-         FROM iso_downloads
-         GROUP BY release, edition, branch, version, kernel
-         ORDER BY downloads DESC LIMIT 1000`,
-      );
+      let recent = [];
+      try {
+        recent = await query(
+          env,
+          `SELECT blob1 AS release, blob2 AS edition, blob3 AS branch,
+                  blob4 AS version, blob5 AS kernel,
+                  SUM(_sample_interval) AS downloads
+           FROM iso_downloads
+           GROUP BY release, edition, branch, version, kernel
+           ORDER BY downloads DESC LIMIT 1000`,
+        );
+      } catch (e) {
+        // the archive does not need the token, so publish it regardless
+        if (!(e instanceof NotConfigured)) throw e;
+      }
       return new Response(
         JSON.stringify({ months: archive, recent }, null, 2),
         { headers: { 'content-type': 'application/json; charset=utf-8' } },

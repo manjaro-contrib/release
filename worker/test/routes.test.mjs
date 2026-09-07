@@ -134,3 +134,41 @@ test('the scheduled handler archives the month that closed', async () => {
   assert.match(seen.at(-1), /toDate\('2026-02-01'\)/, 'february, not march');
   assert.equal(await e.STATS.get('month:2026-02'), JSON.stringify({ xfce: { stable: 4 } }));
 });
+
+test('without the token, /stats says so rather than erroring', async () => {
+  stubFetch([]);
+  const e = env();
+  delete e.ANALYTICS_TOKEN;
+  const res = await worker.fetch(get('/stats'), e);
+  assert.equal(res.status, 200, 'a public page must not 500 while unconfigured');
+  assert.match(await res.text(), /not configured/);
+});
+
+test('without the token, stats.json still publishes the archive', async () => {
+  stubFetch([]);
+  const e = env({
+    kv: {
+      months: JSON.stringify(['2026-02']),
+      'month:2026-02': JSON.stringify({ xfce: { stable: 30 } }),
+    },
+  });
+  delete e.ANALYTICS_TOKEN;
+  const res = await worker.fetch(get('/stats.json'), e);
+  const body = await res.json();
+  assert.deepEqual(body.months, { '2026-02': { xfce: { stable: 30 } } });
+  assert.deepEqual(body.recent, [], 'recent needs the token; the archive does not');
+});
+
+test('a download is still counted while stats are unconfigured', async () => {
+  const e = env();
+  delete e.ANALYTICS_TOKEN;
+  const written = [];
+  e.DOWNLOADS = { writeDataPoint: (p) => written.push(p) };
+  e.BUCKET.get = async () => ({
+    body: 'bytes',
+    writeHttpMetadata: () => {},
+    httpEtag: '"x"',
+  });
+  await worker.fetch(get('/rc-1/manjaro-xfce-26.1.1-unstable-260907-linux72.iso'), e);
+  assert.equal(written.length, 1, 'counting must not depend on the read token');
+});
