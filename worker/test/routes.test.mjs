@@ -193,3 +193,56 @@ test('the stats page links back out of itself', async () => {
   const html = await (await worker.fetch(get('/stats'), env())).text();
   assert.match(html, /href="\/stats"/, 'the shared footer carries the link');
 });
+
+const ARCHIVE = {
+  months: JSON.stringify(['2026-07', '2026-08', '2026-09']),
+  'month:2026-08': JSON.stringify({ xfce: { stable: 30, unstable: 12 } }),
+};
+
+test('the landing page lists the archived months, newest first', async () => {
+  // they exist in kv but were unreachable without guessing the query string
+  stubFetch([{ label: 'xfce', downloads: '5' }]);
+  const html = await (await worker.fetch(get('/stats'), env({ kv: ARCHIVE }))).text();
+  assert.match(html, /archive/);
+  const order = [...html.matchAll(/month=(\d{4}-\d{2})/g)].map((m) => m[1]);
+  assert.deepEqual(order, ['2026-09', '2026-08', '2026-07']);
+});
+
+test('an archived month links its siblings and marks itself', async () => {
+  stubFetch([]);
+  const html = await (
+    await worker.fetch(get('/stats?month=2026-08'), env({ kv: ARCHIVE }))
+  ).text();
+  assert.match(html, /42 downloads/);
+  assert.match(html, /month=2026-07/);
+  // in the archive list the current month is plain text, not a link.
+  // The breadcrumb still links it, which is what a breadcrumb does.
+  const archive = html.slice(html.indexOf('<h2>archive'));
+  assert.match(archive, /<b>2026-08<\/b>/);
+  assert.doesNotMatch(archive, /href="\/stats\?month=2026-08"/);
+});
+
+test('a month with nothing archived still offers the ones that exist', async () => {
+  stubFetch([]);
+  const html = await (
+    await worker.fetch(get('/stats?month=1999-01'), env({ kv: ARCHIVE }))
+  ).text();
+  assert.match(html, /nothing archived/);
+  assert.match(html, /month=2026-08/, 'a dead end must still lead somewhere');
+});
+
+test('a drilled-down view does not carry the archive', async () => {
+  // the months aggregate everything, so listing them under a filtered
+  // view would offer a link that silently drops the filter
+  stubFetch([{ label: 'unstable', downloads: '3' }]);
+  const html = await (
+    await worker.fetch(get('/stats?edition=xfce'), env({ kv: ARCHIVE }))
+  ).text();
+  assert.doesNotMatch(html, /archive/);
+});
+
+test('with no archive yet, no empty section appears', async () => {
+  stubFetch([{ label: 'xfce', downloads: '1' }]);
+  const html = await (await worker.fetch(get('/stats'), env())).text();
+  assert.doesNotMatch(html, /archive/);
+});

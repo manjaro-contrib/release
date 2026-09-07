@@ -35,7 +35,9 @@ equivalent of that listing.
 ## Download stats
 
 `/stats` counts ISO downloads, publicly, and drills down from edition to
-branch to release to kernel. `/stats.json` is the same data.
+branch to release to kernel. Months older than analytics engine's window
+are listed under `archive`, aggregated to edition and branch.
+`/stats.json` is the same data.
 
 Only a whole-image `GET` that returns `200` counts. A resumed download
 issues many range requests and a revalidation transfers nothing, so
