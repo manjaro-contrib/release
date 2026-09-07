@@ -1,0 +1,7 @@
+# Clusters triaged as deliberate, so a re-scan reports only what is new.
+# Regenerate with: slopo index && slopo embed && slopo analyze
+
+# one-line localeCompare comparators, and log(): two copies of one line.
+# Nothing to share that would not cost more than it saves.
+815580f04e32
+41f25a473a10

@@ -2,3 +2,5 @@
 __pycache__/
 download/
 .env
+slopo.db
+slopo-report/
