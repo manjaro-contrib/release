@@ -87,7 +87,7 @@ function page(heading, bodyHtml) {
 <body>
 <h1>${escapeHtml(heading)}</h1>
 ${bodyHtml}
-<footer>packages are at <a href="https://packages.manjaro.download">packages.manjaro.download</a> &middot; built by <a href="https://github.com/manjaro-contrib/release">manjaro-contrib/release</a></footer>
+<footer><a href="/stats">download stats</a> &middot; packages are at <a href="https://packages.manjaro.download">packages.manjaro.download</a> &middot; built by <a href="https://github.com/manjaro-contrib/release">manjaro-contrib/release</a></footer>
 </body>
 </html>
 `;
@@ -174,9 +174,12 @@ function bar(count, max) {
   return `<span class="bar" style="width:${width}%"></span>`;
 }
 
-function renderStats({ heading, rows, crumbs, note }) {
+function renderStats({ heading, rows, crumbs, note, extra = '' }) {
   if (!rows.length) {
-    return page(heading, `${crumbs}<p>${escapeHtml(note ?? 'nothing recorded yet')}</p>`);
+    return page(
+      heading,
+      `${crumbs}<p>${escapeHtml(note ?? 'nothing recorded yet')}</p>${extra}`,
+    );
   }
   const max = Math.max(...rows.map((r) => r.count));
   const total = rows.reduce((sum, r) => sum + r.count, 0);
@@ -191,8 +194,31 @@ function renderStats({ heading, rows, crumbs, note }) {
     .join('\n');
   return page(
     heading,
-    `${crumbs}<p>${total.toLocaleString('en-US')} downloads${note ? ` &middot; ${escapeHtml(note)}` : ''}</p>\n${body}`,
+    `${crumbs}<p>${total.toLocaleString('en-US')} downloads${note ? ` &middot; ${escapeHtml(note)}` : ''}</p>\n${body}${extra}`,
   );
+}
+
+/**
+ * Links to the archived months.
+ *
+ * Analytics engine keeps three months, so without this the older
+ * aggregates exist in kv but can only be reached by guessing the query
+ * string. Listing them is what makes the archive part of the page.
+ */
+async function renderArchive(env, current) {
+  const months = JSON.parse((await env.STATS.get('months')) ?? '[]');
+  if (!months.length) return '';
+  const links = months
+    .slice()
+    .sort()
+    .reverse()
+    .map((m) =>
+      m === current
+        ? `<b>${escapeHtml(m)}</b>`
+        : `<a href="/stats?month=${encodeURIComponent(m)}">${escapeHtml(m)}</a>`,
+    )
+    .join(' &middot; ');
+  return `<h2>archive</h2>\n<p>months past the three analytics engine keeps</p>\n<p>${links}</p>`;
 }
 
 function renderIndex(releases) {
@@ -330,7 +356,15 @@ async function statsView(env, params) {
   // an archived month has no release axis left, so it is answered from kv
   if (month) {
     const stored = await env.STATS.get(`month:${month}`);
-    if (!stored) return renderStats({ heading: `stats ${month}`, rows: [], crumbs: crumbsFor({}), note: `nothing archived for ${month}` });
+    if (!stored) {
+      return renderStats({
+        heading: `stats ${month}`,
+        rows: [],
+        crumbs: crumbsFor({}),
+        note: `nothing archived for ${month}`,
+        extra: await renderArchive(env, month),
+      });
+    }
     const totals = JSON.parse(stored);
     const rows = Object.entries(totals)
       .flatMap(([e, branches]) => Object.entries(branches).map(([b, count]) => ({ label: `${e} ${b}`, count })))
@@ -340,6 +374,7 @@ async function statsView(env, params) {
       rows,
       crumbs: crumbsFor({ month }),
       note: 'archived month, aggregated to edition and branch',
+      extra: await renderArchive(env, month),
     });
   }
 
@@ -377,6 +412,7 @@ async function statsView(env, params) {
     }),
     crumbs: crumbsFor({ release, edition, branch }),
     note: `by ${axis.name}, last three months`,
+    extra: release || edition || branch ? '' : await renderArchive(env, null),
   });
 }
 
