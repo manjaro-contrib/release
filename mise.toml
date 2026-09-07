@@ -1,0 +1,26 @@
+# Tool and dependency versions, so a workstation and a runner agree.
+#
+# The scripts here mirror a release's ISO assets into R2 and prune what is
+# superseded; boto3 is the only third-party import, so there is no package
+# to build and no lockfile to resolve. mise pins the tools, uv installs the
+# dependency.
+#
+# The worker in worker/ is deployed with wrangler and manages its own
+# dependencies through package.json.
+
+[tools]
+python = "3.12"
+uv = "0.12"
+ruff = "0.16.6"
+
+[env]
+# keep uv's cache inside the checkout so a runner can cache one directory
+UV_CACHE_DIR = "{{ config_root }}/.uv-cache"
+
+[tasks.install]
+description = "install the script dependencies"
+run = "uv pip install --system -r requirements.txt"
+
+[tasks.lint]
+description = "lint every python file"
+run = "ruff check ."

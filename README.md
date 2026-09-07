@@ -104,6 +104,21 @@ and Manjaro's own mirrors serve, so tooling can poll a hash instead of
 walking the bucket. The hashes are derived from the objects themselves, so
 re-uploading identical bytes leaves them unchanged.
 
+## Development
+
+Tool and dependency versions live in [`mise.toml`](mise.toml) and
+[`requirements.txt`](requirements.txt), so a workstation and a runner
+install the same thing:
+
+```sh
+mise install        # python, uv and ruff at the pinned versions
+mise run install    # boto3 via uv
+mise run lint       # ruff
+```
+
+The worker in `worker/` is separate: it deploys with wrangler and manages
+its dependencies through `package.json`.
+
 ## Sources
 
 - [iso profiles](https://gitlab.manjaro.org/profiles-and-settings/iso-profiles)

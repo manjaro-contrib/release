@@ -1,0 +1,5 @@
+# The only third-party package the scripts import. Pinned so a run today
+# and a run next month install the same thing - an unpinned dependency
+# turns an upstream release into a failing nightly build with no commit to
+# blame it on.
+boto3==1.43.89
