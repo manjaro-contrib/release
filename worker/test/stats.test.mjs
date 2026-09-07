@@ -16,7 +16,7 @@ function fakeEnv({ rows = [] } = {}) {
   return {
     points,
     kv,
-    DOWNLOADS: { writeDataPoint: (p) => points.push(p) },
+    ANALYTICS_ENGINE: { writeDataPoint: (p) => points.push(p) },
     STATS: {
       get: async (k) => kv.get(k) ?? null,
       put: async (k, v) => void kv.set(k, v),
@@ -96,7 +96,7 @@ test('a key with no release prefix is ignored rather than throwing', () => {
 
 test('an unbound dataset does not break serving', () => {
   const env = fakeEnv();
-  delete env.DOWNLOADS;
+  delete env.ANALYTICS_ENGINE;
   assert.doesNotThrow(() => record(env, KEY, 200, 'GET'));
 });
 

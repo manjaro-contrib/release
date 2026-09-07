@@ -19,8 +19,8 @@ bucket_name = "releases"
 # took while that is still interesting; the rollup below keeps the trend
 # once the detail expires
 [[analytics_engine_datasets]]
-binding = "DOWNLOADS"
-dataset = "iso_downloads"
+binding = "ANALYTICS_ENGINE"
+dataset = "release-downloads"
 
 # the archive the rollup writes into. A download NEVER writes here: kv
 # allows one write per second per key and propagates globally for up to

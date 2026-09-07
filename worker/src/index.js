@@ -224,7 +224,7 @@ function renderIndex(releases) {
  * conditional request that revalidates transfers nothing at all.
  */
 export function record(env, key, status, method) {
-  if (!env.DOWNLOADS) return;
+  if (!env.ANALYTICS_ENGINE) return;
   if (method !== 'GET' || status !== 200) return;
   const slash = key.indexOf('/');
   if (slash < 0) return;
@@ -240,7 +240,7 @@ export function record(env, key, status, method) {
     .split('-');
   const version = fields[0] ?? '';
   const kernel = fields.find((f) => f.startsWith('linux')) ?? '';
-  env.DOWNLOADS.writeDataPoint({
+  env.ANALYTICS_ENGINE.writeDataPoint({
     // one index only, 96 bytes: edition is the axis worth keeping
     // unsampled, and it is short
     indexes: [d.edition],
@@ -286,7 +286,7 @@ export async function rollup(env, month) {
   const rows = await query(
     env,
     `SELECT blob2 AS edition, blob3 AS branch, SUM(_sample_interval) AS downloads
-     FROM iso_downloads
+     FROM "release-downloads"
      WHERE toStartOfMonth(timestamp) = toDate('${month}-01')
      GROUP BY edition, branch`,
   );
@@ -350,7 +350,7 @@ async function statsView(env, params) {
   const rows = await query(
     env,
     `SELECT ${axis.col} AS label, SUM(_sample_interval) AS downloads
-     FROM iso_downloads ${filter}
+     FROM "release-downloads" ${filter}
      GROUP BY label ORDER BY downloads DESC LIMIT 100`,
   );
 
@@ -442,7 +442,7 @@ export default {
           `SELECT blob1 AS release, blob2 AS edition, blob3 AS branch,
                   blob4 AS version, blob5 AS kernel,
                   SUM(_sample_interval) AS downloads
-           FROM iso_downloads
+           FROM "release-downloads"
            GROUP BY release, edition, branch, version, kernel
            ORDER BY downloads DESC LIMIT 1000`,
         );

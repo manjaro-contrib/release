@@ -17,7 +17,7 @@ function env({ sql = [], kv = {} } = {}) {
       list: async () => ({ objects: [], truncated: false }),
       get: async () => null,
     },
-    DOWNLOADS: { writeDataPoint: () => {} },
+    ANALYTICS_ENGINE: { writeDataPoint: () => {} },
     STATS: {
       get: async (k) => store.get(k) ?? null,
       put: async (k, v) => void store.set(k, v),
@@ -163,7 +163,7 @@ test('a download is still counted while stats are unconfigured', async () => {
   const e = env();
   delete e.ANALYTICS_TOKEN;
   const written = [];
-  e.DOWNLOADS = { writeDataPoint: (p) => written.push(p) };
+  e.ANALYTICS_ENGINE = { writeDataPoint: (p) => written.push(p) };
   e.BUCKET.get = async () => ({
     body: 'bytes',
     writeHttpMetadata: () => {},
