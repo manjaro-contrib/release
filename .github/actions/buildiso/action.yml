@@ -89,10 +89,22 @@ inputs:
     default: ''
   export-rootfs:
     description: >-
-      also export the iso's squashfs layers as a flat rootfs tarball, for
-      running the desktop as a container rather than booting it
+      also export the iso's squashfs layers as a flat rootfs tarball and
+      publish it as a container image, for running the desktop rather
+      than booting it
     required: false
     default: "false"
+  rootfs-image:
+    description: >-
+      registry repository to push the rootfs image to, e.g.
+      ghcr.io/manjaro-contrib/tryout. The tag is <edition>-<branch>.
+      Skipped if unset.
+    required: false
+    default: ''
+  registry-token:
+    description: 'token for rootfs-image, e.g. github.token for ghcr.io'
+    required: false
+    default: ''
 
 outputs:
   file-path:
@@ -101,6 +113,9 @@ outputs:
   rootfs-path:
     description: "path of the exported rootfs tarball, empty unless export-rootfs"
     value: ${{ steps.image-build.outputs.rootfs-path }}
+  rootfs-image:
+    description: "the pushed rootfs image, empty unless rootfs-image was set"
+    value: ${{ steps.publish-rootfs-image.outputs.rootfs-image }}
 
 runs:
   using: "composite"
@@ -478,6 +493,52 @@ runs:
         ssh-agent -a /tmp/ssh_agent.sock > /dev/null
         echo "upload-files=./${{ steps.image-build.outputs.file-path }}+(|.sha*|.pkgs|.sig|.torrent)" >> $GITHUB_OUTPUT
         mkdir -p ${{ inputs.edition }}/${{ inputs.version }}
+    - id: publish-rootfs-image
+      shell: bash
+      env:
+        ROOTFS: ${{ steps.image-build.outputs.rootfs-path }}
+        IMAGE: ${{ inputs.rootfs-image }}
+        REGISTRY_TOKEN: ${{ inputs.registry-token }}
+        EDITION: ${{ inputs.edition }}
+        BRANCH: ${{ inputs.branch }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        # if is not yet supported in composite https://github.com/actions/runner/blob/main/docs/adrs/0549-composite-run-steps.md#if-condition
+        if [ -z "$IMAGE" ] || [ -z "${ROOTFS:-}" ] || [ ! -f "${ROOTFS:-}" ]; then
+          echo "## no rootfs image configured"
+          exit 0
+        fi
+        # The tarball is the image: buildah takes a rootfs archive as a
+        # layer directly, so nothing is unpacked, repacked or copied on the
+        # runner. A Containerfile with ADD would cost a second full copy of
+        # a ~2 GB filesystem for no gain.
+        registry="${IMAGE%%/*}"
+        echo "$REGISTRY_TOKEN" \
+          | buildah login --username "${GITHUB_ACTOR}" --password-stdin "$registry"
+
+        ctr=$(buildah from scratch)
+        buildah add "$ctr" "$ROOTFS" /
+        # a container has no login manager to start; leave it at a shell so
+        # the image is useful interactively and as a base for one
+        buildah config --cmd /bin/bash "$ctr"
+        buildah config \
+          --label org.opencontainers.image.title="Manjaro ${EDITION} (${BRANCH})" \
+          --label org.opencontainers.image.description="The ${EDITION} desktop from the ${BRANCH} iso, without kernel or bootloader" \
+          --label org.opencontainers.image.version="${VERSION}" \
+          --label org.opencontainers.image.source="https://github.com/${GITHUB_REPOSITORY}" \
+          --label org.opencontainers.image.revision="${GITHUB_SHA}" \
+          "$ctr"
+
+        # <edition>-<branch> moves with every build, and the release tag
+        # pins the one a given release shipped
+        buildah commit --format oci --squash "$ctr" "${IMAGE}:${EDITION}-${BRANCH}"
+        buildah tag "${IMAGE}:${EDITION}-${BRANCH}" "${IMAGE}:${EDITION}-${BRANCH}-${VERSION}"
+
+        for tag in "${EDITION}-${BRANCH}" "${EDITION}-${BRANCH}-${VERSION}"; do
+          buildah push "${IMAGE}:${tag}"
+          echo "${IMAGE}:${tag}: published"
+        done
+        echo "rootfs-image=${IMAGE}:${EDITION}-${BRANCH}" >> $GITHUB_OUTPUT
     - id: upload-object-storage
       shell: bash
       env:
@@ -487,7 +548,6 @@ runs:
         R2_BUCKET: ${{ inputs.r2-bucket }}
         R2_PREFIX: ${{ inputs.r2-prefix }}
         ISO: ${{ steps.image-build.outputs.file-path }}
-        ROOTFS: ${{ steps.image-build.outputs.rootfs-path }}
         BOTO3_VERSION: '1.43.89'
       run: |
         # if is not yet supported in composite https://github.com/actions/runner/blob/main/docs/adrs/0549-composite-run-steps.md#if-condition
@@ -554,35 +614,6 @@ runs:
                     print(f"{iso}: could not remove {done}: {cleanup}")
             raise
 
-        # The rootfs is deliberately not part of the set above. That set is
-        # all-or-nothing because an image whose signature is missing cannot
-        # be verified; the rootfs is a separate artifact and its absence
-        # says nothing about the image. So a rootfs that fails to upload
-        # takes only itself down, and leaves a verified image published.
-        rootfs = os.environ.get("ROOTFS", "")
-        if rootfs and os.path.exists(rootfs):
-            # named after the image rather than "rootfs.tar.zst", which
-            # would collide between editions sharing a prefix
-            rootfs_key = f"{key}.rootfs.tar.zst"
-            rootfs_size = os.path.getsize(rootfs)
-            print(f"{rootfs}: {rootfs_size / 1e9:.2f} GB -> {rootfs_key}")
-            try:
-                s3.upload_file(rootfs, bucket, rootfs_key, Config=config)
-                head = s3.head_object(Bucket=bucket, Key=rootfs_key)
-                if head["ContentLength"] != rootfs_size:
-                    s3.delete_object(Bucket=bucket, Key=rootfs_key)
-                    raise SystemExit(
-                        f"{rootfs}: uploaded {head['ContentLength']} of {rootfs_size}"
-                    )
-                print(f"{rootfs_key}: published")
-            except (OSError, BotoCoreError, ClientError) as e:
-                # not fatal: the image and its checksums are already up, and
-                # failing here would withdraw a good release over an extra
-                print(f"{rootfs}: not published: {e}")
-                try:
-                    s3.delete_object(Bucket=bucket, Key=rootfs_key)
-                except (BotoCoreError, ClientError):
-                    pass
         EOF
     - id: upload-github-release
       shell: bash -O extglob {0}

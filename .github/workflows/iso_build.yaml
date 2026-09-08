@@ -46,6 +46,8 @@ jobs:
     name: ${{ matrix.branch }} x86_64 ${{ matrix.edition }}
     permissions:
       contents: write
+      # the rootfs is published as a container image, not an object
+      packages: write
     outputs:
       release_tag: ${{ needs.prepare-release.outputs.release_tag }}
     strategy:
@@ -95,10 +97,12 @@ jobs:
           r2-bucket: ${{ secrets.R2_BUCKET }}
           r2-prefix: ${{ needs.prepare-release.outputs.release_tag }}/
           # the iso's own squashfs layers, stacked into a filesystem that
-          # runs as a container. Uploaded beside the image as
-          # <iso>.rootfs.tar.zst, and not part of its all-or-nothing set:
-          # a rootfs that fails to upload leaves the image published.
+          # runs as a container and pushed to ghcr rather than the bucket:
+          # a registry is what pulls a rootfs, and packages are free for
+          # public repositories where r2 egress is not.
           export-rootfs: "true"
+          rootfs-image: ghcr.io/${{ github.repository_owner }}/tryout
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: repo
