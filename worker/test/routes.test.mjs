@@ -110,6 +110,25 @@ test('stats.json exposes the archive and the recent detail', async () => {
   assert.equal(body.recent[0].release, 'rc-1');
 });
 
+test('a multi-segment sidecar aliases too, not just the image', async () => {
+  // the rootfs is published as <image>.iso.rootfs.tar.zst; an alias
+  // pattern that allowed one suffix segment 404'd every one of them
+  const e = env();
+  e.BUCKET.list = async () => ({
+    objects: [
+      { key: 'rc-2/manjaro-sway-26.1.1-260907-linux72.iso', size: 1 },
+      { key: 'rc-2/manjaro-sway-26.1.1-260907-linux72.iso.rootfs.tar.zst', size: 1 },
+    ],
+    truncated: false,
+  });
+  const res = await worker.fetch(get('/sway-stable.iso.rootfs.tar.zst'), e);
+  assert.equal(res.status, 302);
+  assert.equal(
+    res.headers.get('location'),
+    '/rc-2/manjaro-sway-26.1.1-260907-linux72.iso.rootfs.tar.zst',
+  );
+});
+
 test('an alias still resolves, so the new routes did not shadow it', async () => {
   const e = env();
   e.BUCKET.list = async () => ({

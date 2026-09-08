@@ -501,8 +501,12 @@ export default {
 
     // stable aliases: /sway-unstable.iso redirects to the newest build, so a
     // link can be published once instead of per release
+    // \.\w+ repeats: a sidecar is not always one segment. The rootfs is
+    // published as <image>.iso.rootfs.tar.zst, so a single optional group
+    // matched only as far as .iso.rootfs and every rootfs alias 404'd
+    // while the image ones listed beside it redirected.
     const alias = key.match(
-      /^([a-z0-9-]+?)-(unstable|testing|stable)(\.iso(?:\.\w+)?)$/,
+      /^([a-z0-9-]+?)-(unstable|testing|stable)(\.iso(?:\.\w+)*)$/,
     );
     if (alias) {
       const [, edition, branch, suffix] = alias;
