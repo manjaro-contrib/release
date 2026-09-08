@@ -1,0 +1,50 @@
+name: rank-mirrors
+
+on:
+  schedule:
+    # weekly: mirrors change speed over weeks, not hours, and every run
+    # spends a runner pulling tens of megabytes from a dozen of them
+    - cron: '20 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  rank:
+    # the measurement is only meaningful from where the builds run: the
+    # same mirror timed 12.8 MB/s from a laptop in Germany and 33-48 MiB/s
+    # from a runner, which is enough to invert a ranking
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: rank
+        # the script logs to stderr and writes only changed=... to stdout,
+        # so stdout can go straight into the step output
+        run: python3 .github/actions/buildiso/scripts/rank-mirrors.py --action .github/actions/buildiso/action.yml >> "$GITHUB_OUTPUT"
+      - name: open a pull request for the new order
+        if: steps.rank.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automation/mirror-ranking
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/actions/buildiso/action.yml
+          git checkout -b "$BRANCH"
+          git commit -m "chore: reorder the build mirrors by measured throughput"
+          # force: one open pull request that always carries the newest
+          # ranking, rather than one per week
+          git push --force origin "$BRANCH"
+
+          if [ -z "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore: reorder the build mirrors by measured throughput" \
+              --body "$(printf '%s\n\n%s\n' \
+                'Measured from a runner by `scripts/rank-mirrors.py`, which is the only place the numbers mean anything.' \
+                'Check the job log for the rates behind this order before merging.')"
+          else
+            echo "pull request already open for $BRANCH; force-pushed the newer ranking"
+          fi

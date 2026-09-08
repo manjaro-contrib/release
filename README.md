@@ -4,6 +4,17 @@
 
 Building preview ISOs for Manjaro Linux.
 
+### The build action
+
+`.github/actions/buildiso` builds the images. It lived in
+`manjaro-contrib/action-buildiso` until this repository absorbed it: the
+split meant every change to it needed a second pull request here to move a
+pinned sha, and a build could only be tested against a revision that was
+not yet the one production used. Its own README is next to it.
+
+`build-test.yml` runs it on a pull request that touches it, so the thing
+CI exercises and the thing nightly builds use are now the same commit.
+
 ## Description
 
 We build `kde`, `xfce`, `gnome`, `cinnamon` and `sway` against all three

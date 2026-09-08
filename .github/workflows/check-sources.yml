@@ -1,0 +1,27 @@
+name: check-sources
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/actions/buildiso/action.yml
+      - .github/actions/buildiso/scripts/check-sources.py
+  pull_request:
+    paths:
+      - .github/actions/buildiso/action.yml
+      - .github/actions/buildiso/scripts/check-sources.py
+  schedule:
+    # daily: a source can stop resolving without anyone touching this repo,
+    # and the first sign should not be a failed iso build
+    - cron: '40 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: install tooling
+        run: pip install pyyaml
+      - name: check every source resolves
+        run: python3 .github/actions/buildiso/scripts/check-sources.py --action .github/actions/buildiso/action.yml
