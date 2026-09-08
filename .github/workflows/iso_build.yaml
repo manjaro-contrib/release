@@ -64,7 +64,7 @@ jobs:
             repo: https://github.com/manjaro-sway/iso-profiles
     steps:
       - name: x86_64 build
-        uses: manjaro-contrib/action-buildiso@569a7f715e240ac98167b539c430cfb914eb04f5 # main
+        uses: manjaro-contrib/action-buildiso@cd90531d7f2334891bc175ff48bf9ad77e0987be # main
         with:
           iso-profiles-repo: ${{ matrix.repo }}
           edition: ${{ matrix.edition }}
@@ -84,6 +84,11 @@ jobs:
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
           r2-prefix: ${{ needs.prepare-release.outputs.release_tag }}/
+          # the iso's own squashfs layers, stacked into a filesystem that
+          # runs as a container. Uploaded beside the image as
+          # <iso>.rootfs.tar.zst, and not part of its all-or-nothing set:
+          # a rootfs that fails to upload leaves the image published.
+          export-rootfs: "true"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: repo
