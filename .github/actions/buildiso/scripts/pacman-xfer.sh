@@ -72,22 +72,6 @@ if [ "$suffix" = "$URL" ]; then
   exit $?
 fi
 
-case "$URL" in
-  *.sig)
-    # pacman probes for a detached signature that our repositories do not
-    # publish, and treats its absence as an answer. Asking every mirror
-    # for it would spend four round trips to learn the same 404.
-    fetch "$URL"
-    exit $?
-    ;;
-esac
-
-# Each package is a separate invocation of this script - pacman runs
-# XferCommand once per file, ~800 times for a desktop transaction - so a
-# mirror that is down would otherwise cost its connect timeout every time.
-# At 15s that is hours of waiting, and pacman gives up long before. A
-# mirror that fails is recorded here and skipped by the invocations that
-# follow, until the marker ages out and it gets another chance.
 readonly SICK_DIR="${PACMAN_XFER_SICK_DIR:-$(dirname "$MIRRORS_FILE")/sick}"
 readonly SICK_TTL="${PACMAN_XFER_SICK_TTL:-300}"
 
@@ -110,6 +94,44 @@ mark_sick() {
 unmark_sick() {
   rm -f "$SICK_DIR/$(echo "$1" | tr -c 'a-zA-Z0-9' '_')" 2>/dev/null || true
 }
+
+case "$URL" in
+  *.sig)
+    # pacman probes for a detached signature that our repositories do not
+    # publish, and treats its absence as an answer. Asking every mirror for
+    # it would spend four round trips to learn the same 404, so a signature
+    # is fetched from the primary only - but a *transport* failure has to
+    # fail over like anything else. Skipping that is what failed release
+    # run 34209674899: a .sig request to a black-holed primary burned the
+    # full timeout, logged nothing, marked nothing, and failed the
+    # transaction while the failover sat unused one line above.
+    #
+    # A mirror already known to be down is not asked at all, and a
+    # transport failure falls through to the loop below; only an answer
+    # (including a 404) is accepted as final.
+    if ! sick "$primary"; then
+      fetch "$URL"
+      status=$?
+      case $status in
+        0|22)
+          exit $status
+          ;;
+      esac
+      mark_sick "$primary"
+      echo "## xfer: ${primary} failed with exit ${status} on a signature, trying the next mirror" >&2
+    else
+      echo "## xfer: skipping ${primary} for the signature, marked down within the last ${SICK_TTL}s" >&2
+    fi
+    ;;
+esac
+
+# Each package is a separate invocation of this script - pacman runs
+# XferCommand once per file, ~800 times for a desktop transaction - so a
+# mirror that is down would otherwise cost its connect timeout every time.
+# At 15s that is hours of waiting, and pacman gives up long before. A
+# mirror that fails is recorded here and skipped by the invocations that
+# follow, until the marker ages out and it gets another chance.
+
 
 status=1
 tried=0
