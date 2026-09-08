@@ -347,6 +347,14 @@ runs:
             # whose config already carries the line
             sudo sed -i -e "\#^XferCommand = $XFER_DIR/pacman-xfer.sh#d" "$conf"
             sudo sed -i -e "/^\[options\]/a XferCommand = $XFER_DIR/pacman-xfer.sh %o %u" "$conf"
+            # pacman defaults to five parallel downloads, so five copies of
+            # the failover run at once and a dead mirror is probed by each
+            # before any of them has finished marking it. Serialising costs
+            # throughput on a healthy mirror and removes that race outright;
+            # the failover is what keeps a blip from failing the build, and
+            # it only works if one attempt informs the next.
+            sudo sed -i -e "\#^ParallelDownloads#d" "$conf"
+            sudo sed -i -e "/^\[options\]/a ParallelDownloads = 1" "$conf"
           done
           echo "## package downloads fall back through:"
           sudo cat "$XFER_DIR/build-mirrors"

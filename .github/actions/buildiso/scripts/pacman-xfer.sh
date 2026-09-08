@@ -107,6 +107,10 @@ mark_sick() {
   : > "$SICK_DIR/$(echo "$1" | tr -c 'a-zA-Z0-9' '_')" 2>/dev/null || true
 }
 
+unmark_sick() {
+  rm -f "$SICK_DIR/$(echo "$1" | tr -c 'a-zA-Z0-9' '_')" 2>/dev/null || true
+}
+
 status=1
 tried=0
 while read -r mirror; do
@@ -118,9 +122,24 @@ while read -r mirror; do
   tried=$((tried + 1))
   candidate="${mirror%/}${suffix}"
 
+  # Mark before attempting, not after. pacman downloads in parallel, so
+  # several copies of this script run at once; marking on failure leaves a
+  # window the length of the timeout in which every sibling that started
+  # first still probes the dead mirror and fails. That is what failed a
+  # build after the failover was already working: 09:14:27 timed out and
+  # marked it, 09:14:41 correctly skipped it, and 09:14:56 was a sibling
+  # that had begun before the marker existed.
+  #
+  # The marker is removed again on success, so a healthy mirror is not
+  # left looking sick by its own in-flight downloads.
+  mark_sick "$mirror"
+
   fetch "$candidate"
   status=$?
-  [ "$status" -eq 0 ] && exit 0
+  if [ "$status" -eq 0 ]; then
+    unmark_sick "$mirror"
+    exit 0
+  fi
 
   # a stalled mirror leaves a partial file; the next mirror must not
   # resume into it
@@ -128,9 +147,10 @@ while read -r mirror; do
 
   # 22 is an HTTP error from a mirror that answered - the file is missing
   # there, which says nothing about the mirror's health. Only a transport
-  # failure (timeout, refused, reset) means "do not come back for a while".
-  if [ "$status" -ne 22 ]; then
-    mark_sick "$mirror"
+  # failure (timeout, refused, reset) means "do not come back for a while",
+  # so an answering mirror gets its pre-emptive marker taken back.
+  if [ "$status" -eq 22 ]; then
+    unmark_sick "$mirror"
   fi
   echo "## xfer: ${mirror} failed with exit ${status}, trying the next mirror" >&2
 done < "$MIRRORS_FILE"
@@ -168,6 +188,8 @@ if [ "$tried" -eq 0 ]; then
     # next invocation finds nothing sick and pays the full probe again
     if [ "$status" -ne 22 ]; then
       mark_sick "$mirror"
+    else
+      unmark_sick "$mirror"
     fi
     echo "## xfer: ${mirror} failed with exit ${status} on the retry" >&2
   done < "$MIRRORS_FILE"
