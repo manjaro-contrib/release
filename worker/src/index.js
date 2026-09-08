@@ -8,6 +8,9 @@
  */
 
 import { FAVICON } from './favicon.js';
+import { regionFor } from './trypool.js';
+
+export { TryPool } from './trypool.js';
 
 const TITLE = 'Manjaro Sway release candidates';
 
@@ -426,7 +429,11 @@ export default {
     const url = new URL(request.url);
     const key = decodeURIComponent(url.pathname.slice(1));
 
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
+    // the bucket is read-only over http, so anything but a read is a
+    // mistake - except the session broker, which allocates and therefore
+    // has to be a POST
+    const isTry = key === 'try' || key.startsWith('try/');
+    if (!isTry && request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response('method not allowed', { status: 405 });
     }
 
@@ -501,6 +508,36 @@ export default {
 
     // stable aliases: /sway-unstable.iso redirects to the newest build, so a
     // link can be published once instead of per release
+    // the session broker for #24. Before the alias match, which would
+    // otherwise read "try" as an edition name - the same trap /stats has.
+    if (key === 'try/status' || key.startsWith('try/')) {
+      if (!env.TRY_POOL) {
+        return new Response('try is not configured yet', { status: 503 });
+      }
+      // one instance holds the whole pool, so every region is counted in
+      // one place and /status needs no fan-out
+      const pool = env.TRY_POOL.get(env.TRY_POOL.idFromName('v1'));
+      const action = key.slice('try/'.length);
+      if (!['status', 'claim', 'extend', 'release'].includes(action)) {
+        return new Response('not found', { status: 404 });
+      }
+      // claiming is a write, and a GET that allocates would be followed by
+      // every crawler that finds the link
+      if (action !== 'status' && request.method !== 'POST') {
+        return new Response('method not allowed', { status: 405 });
+      }
+      const inner = new URL(`https://pool/${action}`);
+      for (const [k, v] of url.searchParams) inner.searchParams.set(k, v);
+      if (action === 'claim') {
+        // the region comes from the edge, not the client: a caller that
+        // picks its own region could drain a pool it is nowhere near
+        inner.searchParams.set('region', regionFor(request.cf));
+      }
+      // a Request rather than a url and init: the stub accepts both, but
+      // only one of them carries a .url the object can read
+      return pool.fetch(new Request(inner, { method: 'POST' }));
+    }
+
     // \.\w+ repeats: a sidecar is not always one segment. The rootfs is
     // published as <image>.iso.rootfs.tar.zst, so a single optional group
     // matched only as far as .iso.rootfs and every rootfs alias 404'd

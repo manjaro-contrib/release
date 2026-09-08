@@ -35,6 +35,17 @@ id = "1e8176d04cfd4606a379e7b46b373dd0"
 [vars]
 ACCOUNT_ID = "ed740e1b87e525691b947ca317a3cb90"
 
+# the try-in-browser pool (#24). One instance named "v1" holds every
+# region's accounting; the name is versioned so a change of pool shape can
+# start from an empty object rather than migrating one.
+[[durable_objects.bindings]]
+name = "TRY_POOL"
+class_name = "TryPool"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TryPool"]
+
 [triggers]
 # the 2nd rather than the 1st: a month's final downloads must be
 # queryable before it is archived, and ingestion is not instant

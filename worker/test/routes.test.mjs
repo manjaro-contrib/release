@@ -110,6 +110,46 @@ test('stats.json exposes the archive and the recent detail', async () => {
   assert.equal(body.recent[0].release, 'rc-1');
 });
 
+test('the try routes are not read as an edition alias', async () => {
+  // /try/status must be matched before the alias pattern, exactly as
+  // /stats must; and a GET that allocates would be followed by crawlers
+  const e = env();
+  const calls = [];
+  e.TRY_POOL = {
+    idFromName: (n) => n,
+    get: () => ({
+      fetch: async (req) => {
+        calls.push(new URL(req.url).pathname);
+        return Response.json({ ok: true });
+      },
+    }),
+  };
+
+  const status = await worker.fetch(get('/try/status'), e);
+  assert.equal(status.status, 200);
+  assert.deepEqual(calls, ['/status']);
+
+  const claimed = await worker.fetch(get('/try/claim'), e);
+  assert.equal(claimed.status, 405, 'claiming needs a post');
+
+  const post = await worker.fetch(
+    new Request('https://manjaro.download/try/claim', { method: 'POST' }),
+    e,
+  );
+  assert.equal(post.status, 200);
+  assert.deepEqual(calls, ['/status', '/claim']);
+});
+
+test('try answers 503 while the pool is unbound, not 405', async () => {
+  // the binding does not exist until the worker is deployed with it, and a
+  // half-deployed route should say "not yet" rather than "wrong method"
+  const res = await worker.fetch(
+    new Request('https://manjaro.download/try/claim', { method: 'POST' }),
+    env(),
+  );
+  assert.equal(res.status, 503);
+});
+
 test('a multi-segment sidecar aliases too, not just the image', async () => {
   // the rootfs is published as <image>.iso.rootfs.tar.zst; an alias
   // pattern that allowed one suffix segment 404'd every one of them
