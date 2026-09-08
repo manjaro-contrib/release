@@ -8,6 +8,9 @@ on:
       - main
     paths:
       - .github/workflows/iso_build.yaml
+      # the action lives here now, so a change to it is a change to the
+      # build; before this it took a scheduled run to pick one up
+      - .github/actions/buildiso/**
 
 concurrency:
   group: ${{ github.workflow }}
