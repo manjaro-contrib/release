@@ -59,7 +59,11 @@ jobs:
         # profile requests lib32-flex, which is not in the multilib the
         # build mirror serves, so every i3 build fails in
         # make_image_desktop(). Restore it once the profile is fixed.
-        edition: [kde, xfce, gnome, cinnamon, sway]
+        # the order decides which six start: combinations expand with this
+        # dimension varying slowest, so the first two editions fill the
+        # max-parallel window. sway and xfce first, to get a look at those
+        # two without waiting out a full run.
+        edition: [sway, xfce, kde, gnome, cinnamon]
         branch: [stable, testing, unstable]
         include:
           - repo: https://github.com/manjaro-contrib/profiles-and-settings-iso-profiles.git
