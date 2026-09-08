@@ -1,0 +1,38 @@
+name: empty-bucket
+# Manual only, and gated on typing the bucket name: this deletes every
+# object, the download page included, and R2 has no versioning to undo it.
+# Ordinary retention is prune_releases.py in iso_build.yaml.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'type the bucket name to confirm, or leave empty to list only'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  empty:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: install tooling
+        run: pip install boto3
+      - name: empty the bucket
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          # the input has to match the bucket the secrets point at, so a
+          # dispatch against the wrong repository cannot empty anything
+          if [ "$CONFIRM" = "$R2_BUCKET" ]; then
+            python3 scripts/empty_bucket.py --yes
+          else
+            echo "## confirm did not match the bucket name: listing only"
+            python3 scripts/empty_bucket.py
+          fi
