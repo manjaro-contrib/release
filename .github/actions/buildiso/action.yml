@@ -502,6 +502,7 @@ runs:
         EDITION: ${{ inputs.edition }}
         BRANCH: ${{ inputs.branch }}
         VERSION: ${{ inputs.version }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
       run: |
         # if is not yet supported in composite https://github.com/actions/runner/blob/main/docs/adrs/0549-composite-run-steps.md#if-condition
         if [ -z "$IMAGE" ] || [ -z "${ROOTFS:-}" ] || [ ! -f "${ROOTFS:-}" ]; then
@@ -529,12 +530,20 @@ runs:
           --label org.opencontainers.image.revision="${GITHUB_SHA}" \
           "$ctr"
 
-        # <edition>-<branch> moves with every build, and the release tag
-        # pins the one a given release shipped
-        buildah commit --format oci --squash "$ctr" "${IMAGE}:${EDITION}-${BRANCH}"
-        buildah tag "${IMAGE}:${EDITION}-${BRANCH}" "${IMAGE}:${EDITION}-${BRANCH}-${VERSION}"
+        # <edition>-<branch> moves with every build; the release tag pins the
+        # one a given release shipped. Not `version`: it is an optional input
+        # that the workflow does not pass, so the pinned tag came out as
+        # "kde-stable-" - a second moving tag wearing a dash.
+        moving="${EDITION}-${BRANCH}"
+        buildah commit --format oci --squash "$ctr" "${IMAGE}:${moving}"
 
-        for tag in "${EDITION}-${BRANCH}" "${EDITION}-${BRANCH}-${VERSION}"; do
+        tags=("$moving")
+        if [ -n "${RELEASE_TAG:-}" ]; then
+          buildah tag "${IMAGE}:${moving}" "${IMAGE}:${moving}-${RELEASE_TAG}"
+          tags+=("${moving}-${RELEASE_TAG}")
+        fi
+
+        for tag in "${tags[@]}"; do
           buildah push "${IMAGE}:${tag}"
           echo "${IMAGE}:${tag}: published"
         done
