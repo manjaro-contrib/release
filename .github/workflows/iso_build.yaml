@@ -15,7 +15,13 @@ concurrency:
 
 env:
   MATRIX_ROOM_ID: "!XXstZzLEcUVKyTcqCA:matrix.org"
-  MIRROR: https://opencolo.mm.fcix.net/manjaro
+  # opencolo measured slowest of the fcix mirrors and stalled twice in one
+  # evening - a hang at 20:44 and connect timeouts at 22:34 - taking six
+  # editions with it across two runs. All of these sync within a minute of
+  # each other, so the choice is throughput and reliability, not freshness:
+  # forksystems sustains ~21 MB/s to opencolo's ~13, and connects faster.
+  # The action falls back through the others if this one goes down.
+  MIRROR: https://forksystems.mm.fcix.net/manjaro
 
 jobs:
   prepare-release:
