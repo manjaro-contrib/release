@@ -1,0 +1,7 @@
+# Bash refuses a script with CRLF line endings, and the error names the
+# shell rather than the line endings - a genuinely cryptic failure a
+# quarter of an hour into a build. Normalising on checkin keeps a file
+# edited on Windows from ever reaching a runner.
+*.sh text eol=lf
+*.yml text eol=lf
+*.py text eol=lf

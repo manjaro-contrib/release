@@ -1,0 +1,58 @@
+name: 'build-test'
+on:
+  pull_request:
+    # the action is the only thing this exercises, and it costs 25 minutes;
+    # a change to the worker or the publish scripts does not need an iso
+    paths:
+      - .github/actions/buildiso/**
+      - .github/workflows/test.yml
+
+env:
+  ##### EDIT ME #####
+  iso-profiles-git: https://github.com/manjaro-contrib/profiles-and-settings-iso-profiles
+  version: ci-test-ignore-me-${{ github.event.number }}
+  ###################
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: delete test-release
+        run: |
+          echo ${{ github.token }} | gh auth login --with-token
+          gh release delete ${{ env.version }} -y --repo ${{ github.repository }} || exit 0
+          git push --delete origin ${{ env.version }}
+  build-release:
+    runs-on: ubuntu-24.04
+    needs: [cleanup]
+    strategy:
+      matrix:
+        ##### EDIT ME #####
+        EDITION: [xfce]
+        BRANCH: [unstable]
+        SCOPE: [minimal]
+        ###################
+    steps:
+      - uses: styfle/cancel-workflow-action@d07a454dad7609a92316b57b23c9ccfd4f59af66 # 0.13.1
+        with:
+          access_token: ${{ github.token }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - id: image-build
+        uses: ./.github/actions/buildiso
+        with:
+          iso-profiles-repo: ${{ env.iso-profiles-git }}
+          edition: ${{ matrix.edition }}
+          branch: ${{ matrix.branch }}
+          scope: ${{ matrix.scope }}
+          version: ${{ env.version }}
+          release-tag: ${{ env.version }}
+          gpg-secret-key-base64: ${{ secrets.CI_PRIV_KEY }}
+          gpg-passphrase: ${{ secrets.CI_GPG_PASSPHRASE }}
+          # only override the action's default when a mirror is configured:
+          # passing an unset secret sets it to the empty string, and the
+          # build then resolves /unstable/$repo/$arch with no host at all
+          build-mirror: ${{ secrets.BUILD_MIRROR || 'https://opencolo.mm.fcix.net/manjaro' }}

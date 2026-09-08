@@ -63,8 +63,11 @@ jobs:
           - edition: sway
             repo: https://github.com/manjaro-sway/iso-profiles
     steps:
+      # a local action has to be on disk before it can be used, and this
+      # job otherwise checks the repository out only afterwards, into repo/
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: x86_64 build
-        uses: manjaro-contrib/action-buildiso@0207ff8b5d4309e4a9ccd487e188bd35540e933e # main
+        uses: ./.github/actions/buildiso
         with:
           iso-profiles-repo: ${{ matrix.repo }}
           edition: ${{ matrix.edition }}
