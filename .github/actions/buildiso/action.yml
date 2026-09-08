@@ -350,6 +350,32 @@ runs:
           done
           echo "## package downloads fall back through:"
           sudo cat "$XFER_DIR/build-mirrors"
+
+          # Assert rather than assume. Three separate fixes claimed to make
+          # the failover work and none did, because each reasoned about
+          # which pacman.conf buildiso reads instead of checking. buildiso
+          # picks ${DATADIR}/pacman-multilib.conf on x86_64 via
+          # get_pacman_conf(), and mkchroot copies that into a
+          # pacman-basestrap.conf with the Include line rewritten - so the
+          # XferCommand has to be in the file, and has to survive that sed.
+          conf=/usr/share/manjaro-tools/pacman-multilib.conf
+          if ! grep -q "^XferCommand" "$conf"; then
+            echo "## xfer: $conf carries no XferCommand; the failover would not run" >&2
+            exit 1
+          fi
+          if ! sed "s#Include = /etc/pacman.d/mirrorlist#Server = x#g" "$conf" |
+               grep -q "^XferCommand"; then
+            echo "## xfer: XferCommand is lost by mkchroot's rewrite" >&2
+            exit 1
+          fi
+          if ! sudo test -x "$XFER_DIR/pacman-xfer.sh"; then
+            echo "## xfer: $XFER_DIR/pacman-xfer.sh is not executable" >&2
+            exit 1
+          fi
+          echo "## xfer: $conf and the script are in place"
+          # what pacman will actually read, so a failure does not need a
+          # guess about which file was patched
+          sed -n '/^\[options\]/,/^\[/p' "$conf" | head -12
         fi
     - id: checkout-iso-profiles
       shell: bash
