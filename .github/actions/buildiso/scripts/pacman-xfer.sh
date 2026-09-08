@@ -144,16 +144,15 @@ while read -r mirror; do
   tried=$((tried + 1))
   candidate="${mirror%/}${suffix}"
 
-  # Mark before attempting, not after. pacman downloads in parallel, so
-  # several copies of this script run at once; marking on failure leaves a
-  # window the length of the timeout in which every sibling that started
-  # first still probes the dead mirror and fails. That is what failed a
-  # build after the failover was already working: 09:14:27 timed out and
-  # marked it, 09:14:41 correctly skipped it, and 09:14:56 was a sibling
-  # that had begun before the marker existed.
+  # Mark before attempting, not after, so a mirror being probed right now
+  # counts as suspect for anything else that reads the list. pacman itself
+  # never runs this concurrently - an XferCommand is invoked one file at a
+  # time whatever ParallelDownloads says, measured at 88 invocations with
+  # no two overlapping - so this guards only against a second pacman, of
+  # which a buildiso run has several in sequence.
   #
-  # The marker is removed again on success, so a healthy mirror is not
-  # left looking sick by its own in-flight downloads.
+  # The marker is removed again on success, so a healthy mirror is not left
+  # looking sick by its own download.
   mark_sick "$mirror"
 
   fetch "$candidate"
